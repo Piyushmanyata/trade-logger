@@ -712,7 +712,7 @@ body::before {
 /* ===== Summary Stats ===== */
 .summary-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: var(--spacing-md);
   margin-bottom: var(--spacing-xl);
 }
@@ -732,9 +732,19 @@ body::before {
   border-color: rgba(255, 255, 255, 0.2);
 }
 
+.stat-card.hero {
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(180, 0, 255, 0.1));
+  border-color: rgba(0, 240, 255, 0.3);
+}
+
+.stat-card.hero .stat-value {
+  font-size: 2.2rem;
+}
+
 .stat-value {
-  font-size: 2rem;
+  font-size: 1.6rem;
   font-weight: 700;
+  font-family: 'Fira Code', monospace;
   margin-bottom: var(--spacing-xs);
 }
 
@@ -746,6 +756,18 @@ body::before {
 .stat-value.negative {
   color: var(--pnl-negative);
   text-shadow: 0 0 20px rgba(255, 0, 68, 0.3);
+}
+
+@media (max-width: 900px) {
+  .summary-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .summary-stats {
+    grid-template-columns: 1fr;
+  }
 }
 
 .stat-label {

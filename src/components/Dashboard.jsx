@@ -185,30 +185,29 @@ export default function Dashboard({ structuresData, onStructureClick }) {
                 </div>
             )}
 
-            {/* Summary Stats - Enhanced Metrics */}
+            {/* Summary Stats - Core Metrics Only */}
             <div className="summary-stats">
-                <div className="stat-card">
+                {/* Row 1: P&L Metrics */}
+                <div className="stat-card hero">
                     <div className={`stat-value ${summaryStats.totalPnLDollars >= 0 ? 'positive' : 'negative'}`}>
                         {formatDollars(summaryStats.totalPnLDollars)}
                     </div>
                     <div className="stat-label">Net P&L</div>
                 </div>
                 <div className="stat-card">
-                    <div className="stat-value" style={{ fontSize: '1.5rem' }}>
+                    <div className={`stat-value ${summaryStats.totalGrossDollars >= 0 ? 'positive' : 'negative'}`}>
                         {formatDollars(summaryStats.totalGrossDollars)}
                     </div>
                     <div className="stat-label">Gross P&L</div>
                 </div>
                 <div className="stat-card">
-                    <div className="stat-value negative" style={{ fontSize: '1.5rem' }}>
+                    <div className="stat-value negative">
                         -${summaryStats.totalRTCost.toFixed(2)}
                     </div>
-                    <div className="stat-label">Total RT Costs</div>
+                    <div className="stat-label">RT Costs</div>
                 </div>
-                <div className="stat-card">
-                    <div className="stat-value">{summaryStats.totalRTLegs}</div>
-                    <div className="stat-label">RT Legs</div>
-                </div>
+
+                {/* Row 2: Performance Metrics */}
                 <div className="stat-card">
                     <div className={`stat-value ${summaryStats.winRate >= 50 ? 'positive' : 'negative'}`}>
                         {summaryStats.winRate.toFixed(1)}%
@@ -216,28 +215,14 @@ export default function Dashboard({ structuresData, onStructureClick }) {
                     <div className="stat-label">Win Rate</div>
                 </div>
                 <div className="stat-card">
-                    <div className="stat-value" style={{ color: 'var(--neon-orange)' }}>
-                        {summaryStats.scratchRate.toFixed(1)}%
+                    <div className="stat-value">
+                        <span style={{ color: 'var(--pnl-positive)' }}>{summaryStats.winningTrades}</span>
+                        <span style={{ color: 'var(--text-muted)' }}>/</span>
+                        <span style={{ color: 'var(--pnl-negative)' }}>{summaryStats.losingTrades}</span>
+                        <span style={{ color: 'var(--text-muted)' }}>/</span>
+                        <span style={{ color: 'var(--neon-orange)' }}>{summaryStats.scratchTrades}</span>
                     </div>
-                    <div className="stat-label">Scratch%</div>
-                </div>
-                <div className="stat-card">
-                    <div className={`stat-value ${summaryStats.profitFactor >= 1 ? 'positive' : 'negative'}`}>
-                        {formatRatio(summaryStats.profitFactor)}
-                    </div>
-                    <div className="stat-label">Profit Factor</div>
-                </div>
-                <div className="stat-card">
-                    <div className={`stat-value ${summaryStats.sharpeRatio >= 0 ? 'positive' : 'negative'}`}>
-                        {formatRatio(summaryStats.sharpeRatio)}
-                    </div>
-                    <div className="stat-label">Sharpe Ratio</div>
-                </div>
-                <div className="stat-card">
-                    <div className={`stat-value ${summaryStats.sortinoRatio >= 0 ? 'positive' : 'negative'}`}>
-                        {formatRatio(summaryStats.sortinoRatio)}
-                    </div>
-                    <div className="stat-label">Sortino Ratio</div>
+                    <div className="stat-label">W/L/S</div>
                 </div>
                 <div className="stat-card">
                     <div className={`stat-value ${(summaryStats.totalPnLDollars / (summaryStats.totalTrades || 1)) >= 0 ? 'positive' : 'negative'}`}>
