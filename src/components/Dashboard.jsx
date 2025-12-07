@@ -185,50 +185,60 @@ export default function Dashboard({ structuresData, onStructureClick }) {
                 </div>
             )}
 
-            {/* Summary Stats - Core Metrics Only */}
-            <div className="summary-stats">
-                {/* Row 1: P&L Metrics */}
-                <div className="stat-card hero">
-                    <div className={`stat-value ${summaryStats.totalPnLDollars >= 0 ? 'positive' : 'negative'}`}>
-                        {formatDollars(summaryStats.totalPnLDollars)}
+            {/* Summary Stats - Hero Row + Secondary Row */}
+            <div className="dashboard-stats">
+                {/* Hero Row: Net P&L and RT Costs */}
+                <div className="hero-stats-row">
+                    <div className="stat-card hero-primary">
+                        <div className={`stat-value ${summaryStats.totalPnLDollars >= 0 ? 'positive' : 'negative'}`}>
+                            {formatDollars(summaryStats.totalPnLDollars)}
+                        </div>
+                        <div className="stat-label">Net P&L</div>
+                        <div className="stat-subtitle">
+                            Gross: {formatDollars(summaryStats.totalGrossDollars)}
+                        </div>
                     </div>
-                    <div className="stat-label">Net P&L</div>
-                </div>
-                <div className="stat-card">
-                    <div className={`stat-value ${summaryStats.totalGrossDollars >= 0 ? 'positive' : 'negative'}`}>
-                        {formatDollars(summaryStats.totalGrossDollars)}
+                    <div className="stat-card hero-secondary">
+                        <div className="stat-value negative">
+                            -${summaryStats.totalRTCost.toFixed(2)}
+                        </div>
+                        <div className="stat-label">RT Costs</div>
+                        <div className="stat-subtitle">
+                            {summaryStats.totalRTLegs} legs total
+                        </div>
                     </div>
-                    <div className="stat-label">Gross P&L</div>
-                </div>
-                <div className="stat-card">
-                    <div className="stat-value negative">
-                        -${summaryStats.totalRTCost.toFixed(2)}
-                    </div>
-                    <div className="stat-label">RT Costs</div>
                 </div>
 
-                {/* Row 2: Performance Metrics */}
-                <div className="stat-card">
-                    <div className={`stat-value ${summaryStats.winRate >= 50 ? 'positive' : 'negative'}`}>
-                        {summaryStats.winRate.toFixed(1)}%
+                {/* Performance Row: Win, Loss, Scratch, Avg */}
+                <div className="performance-stats-row">
+                    <div className="stat-card compact">
+                        <div className={`stat-value ${summaryStats.winRate >= 50 ? 'positive' : 'negative'}`}>
+                            {summaryStats.winRate.toFixed(1)}%
+                        </div>
+                        <div className="stat-label">Win Rate</div>
                     </div>
-                    <div className="stat-label">Win Rate</div>
-                </div>
-                <div className="stat-card">
-                    <div className="stat-value">
-                        <span style={{ color: 'var(--pnl-positive)' }}>{summaryStats.winningTrades}</span>
-                        <span style={{ color: 'var(--text-muted)' }}>/</span>
-                        <span style={{ color: 'var(--pnl-negative)' }}>{summaryStats.losingTrades}</span>
-                        <span style={{ color: 'var(--text-muted)' }}>/</span>
-                        <span style={{ color: 'var(--neon-orange)' }}>{summaryStats.scratchTrades}</span>
+                    <div className="stat-card compact">
+                        <div className="stat-value" style={{ color: 'var(--neon-orange)' }}>
+                            {summaryStats.scratchRate.toFixed(1)}%
+                        </div>
+                        <div className="stat-label">Scratch%</div>
                     </div>
-                    <div className="stat-label">W/L/S</div>
-                </div>
-                <div className="stat-card">
-                    <div className={`stat-value ${(summaryStats.totalPnLDollars / (summaryStats.totalTrades || 1)) >= 0 ? 'positive' : 'negative'}`}>
-                        {formatDollars(summaryStats.totalPnLDollars / (summaryStats.totalTrades || 1))}
+                    <div className="stat-card compact">
+                        <div className="stat-value">
+                            <span style={{ color: 'var(--pnl-positive)' }}>{summaryStats.winningTrades}</span>
+                            <span style={{ color: 'var(--text-muted)' }}>/</span>
+                            <span style={{ color: 'var(--pnl-negative)' }}>{summaryStats.losingTrades}</span>
+                            <span style={{ color: 'var(--text-muted)' }}>/</span>
+                            <span style={{ color: 'var(--neon-orange)' }}>{summaryStats.scratchTrades}</span>
+                        </div>
+                        <div className="stat-label">W/L/S</div>
                     </div>
-                    <div className="stat-label">Avg P&L/Trade</div>
+                    <div className="stat-card compact">
+                        <div className={`stat-value ${(summaryStats.totalPnLDollars / (summaryStats.totalTrades || 1)) >= 0 ? 'positive' : 'negative'}`}>
+                            {formatDollars(summaryStats.totalPnLDollars / (summaryStats.totalTrades || 1))}
+                        </div>
+                        <div className="stat-label">Avg P&L/Trade</div>
+                    </div>
                 </div>
             </div>
 
