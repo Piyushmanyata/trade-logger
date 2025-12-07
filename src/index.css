@@ -2739,3 +2739,160 @@ body::before {
     grid-template-columns: 1fr;
   }
 }
+
+/* ===== Manual Entry Form Enhancement ===== */
+.manual-form {
+  padding: var(--spacing-md);
+}
+
+.manual-form .form-row {
+  display: grid;
+  grid-template-columns: 2fr 100px 80px 100px 120px 100px 100px;
+  gap: var(--spacing-sm);
+  align-items: end;
+}
+
+.manual-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.manual-form .form-group label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+
+.manual-form .form-group input,
+.manual-form .form-group select {
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  transition: var(--transition-fast);
+}
+
+.manual-form .form-group input:focus,
+.manual-form .form-group select:focus {
+  outline: none;
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.2);
+}
+
+.manual-form .form-group input::placeholder {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+/* Side Buttons */
+.side-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.side-btn {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.side-btn.buy:hover,
+.side-btn.buy.active {
+  background: rgba(0, 255, 136, 0.2);
+  border-color: var(--pnl-positive);
+  color: var(--pnl-positive);
+}
+
+.side-btn.sell:hover,
+.side-btn.sell.active {
+  background: rgba(255, 0, 68, 0.2);
+  border-color: var(--pnl-negative);
+  color: var(--pnl-negative);
+}
+
+/* Add Trade Button */
+.add-trade-btn {
+  padding: 10px 16px !important;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+/* Autocomplete Dropdown */
+.autocomplete-wrapper {
+  position: relative;
+}
+
+.suggestions-dropdown {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--neon-cyan);
+  border-radius: var(--radius-md);
+  max-height: 280px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.suggestions-dropdown.upward {
+  bottom: 100%;
+  margin-bottom: 4px;
+}
+
+.suggestion-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--glass-border);
+  transition: var(--transition-fast);
+}
+
+.suggestion-item:last-of-type {
+  border-bottom: none;
+}
+
+.suggestion-item:hover,
+.suggestion-item.selected {
+  background: rgba(0, 240, 255, 0.15);
+  color: var(--neon-cyan);
+}
+
+.suggestion-hint {
+  padding: 8px 16px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  background: rgba(0, 0, 0, 0.3);
+  border-top: 1px solid var(--glass-border);
+}
+
+/* Responsive Manual Form */
+@media (max-width: 1200px) {
+  .manual-form .form-row {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: var(--spacing-md);
+  }
+
+  .manual-form .structure-group {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .manual-form .form-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}

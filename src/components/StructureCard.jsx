@@ -99,6 +99,10 @@ export default function StructureCard({ structure, onClick }) {
                         <span style={{ color: 'var(--neon-orange)' }}>{stats?.scratchTrades || 0}</span>
                     </span>
                 </span>
+                <span>
+                    <span className="label">RTs</span>
+                    <span className="value">{stats?.totalRTLegs || Math.round((structure.totalRTCost || 0) / 1.65) || 0}</span>
+                </span>
             </div>
 
             {/* Top 3 Tick Capture */}
