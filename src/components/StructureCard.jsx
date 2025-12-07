@@ -82,9 +82,11 @@ export default function StructureCard({ structure, onClick }) {
                     </span>
                 </span>
                 <span>
-                    <span className="label">Scratch%</span>
-                    <span className="value" style={{ color: 'var(--neon-orange)' }}>
-                        {stats?.scratchRate?.toFixed(0) || 0}%
+                    <span className="label">Ticks</span>
+                    <span className="value">
+                        <span style={{ color: 'var(--pnl-positive)' }}>+{stats?.tickCapture?.avgTicksWon?.toFixed(1) || '0.0'}</span>
+                        <span style={{ color: 'var(--text-muted)' }}>/</span>
+                        <span style={{ color: 'var(--pnl-negative)' }}>-{stats?.tickCapture?.avgTicksLost?.toFixed(1) || '0.0'}</span>
                     </span>
                 </span>
                 <span>

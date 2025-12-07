@@ -147,6 +147,51 @@ export default function Analytics({ structuresData }) {
         };
     }, [allMatches]);
 
+    // Portfolio Tick Capture Analysis
+    const tickCaptureAnalysis = useMemo(() => {
+        const wins = allMatches.filter(m => (m.pnlDollars || 0) > 0);
+        const losses = allMatches.filter(m => (m.pnlDollars || 0) < 0);
+
+        if (wins.length === 0) {
+            return {
+                avgTicksWon: 0,
+                avgTicksLost: 0,
+                distribution: {},
+                totalWins: 0
+            };
+        }
+
+        // Calculate ticks for each trade
+        const winTicks = wins.map(m => Math.round(m.pnl / TICK_SIZE));
+        const lossTicks = losses.map(m => Math.abs(Math.round(m.pnl / TICK_SIZE)));
+
+        const avgTicksWon = winTicks.reduce((s, t) => s + t, 0) / wins.length;
+        const avgTicksLost = losses.length > 0 ? lossTicks.reduce((s, t) => s + t, 0) / losses.length : 0;
+
+        // Distribution by tick count (1, 2, 3, 4, 5+)
+        const distribution = {};
+        for (const ticks of winTicks) {
+            const bucket = ticks >= 5 ? '5+' : String(ticks);
+            distribution[bucket] = (distribution[bucket] || 0) + 1;
+        }
+
+        // Convert to percentages
+        const distPercent = {};
+        for (const [bucket, count] of Object.entries(distribution)) {
+            distPercent[bucket] = {
+                count,
+                percent: (count / wins.length) * 100
+            };
+        }
+
+        return {
+            avgTicksWon,
+            avgTicksLost,
+            distribution: distPercent,
+            totalWins: wins.length
+        };
+    }, [allMatches]);
+
     const formatDollars = (value) => {
         if (value === undefined || value === null) return '$0.00';
         const prefix = value >= 0 ? '+' : '';
@@ -310,6 +355,61 @@ export default function Analytics({ structuresData }) {
                         </div>
                     </div>
                 </div>
+
+                {/* Tick Capture Analysis */}
+                {tickCaptureAnalysis.totalWins > 0 && (
+                    <div className="analytics-section">
+                        <h2 className="section-title">
+                            <Zap size={20} />
+                            Tick Capture Analysis
+                        </h2>
+
+                        <div className="tick-capture-grid">
+                            <div className="tick-summary-cards">
+                                <div className="tick-summary-card positive">
+                                    <div className="tick-value">{tickCaptureAnalysis.avgTicksWon.toFixed(1)}</div>
+                                    <div className="tick-label">Avg Ticks Won</div>
+                                </div>
+                                <div className="tick-summary-card negative">
+                                    <div className="tick-value">{tickCaptureAnalysis.avgTicksLost.toFixed(1)}</div>
+                                    <div className="tick-label">Avg Ticks Lost</div>
+                                </div>
+                                <div className="tick-summary-card ratio">
+                                    <div className="tick-value">
+                                        {tickCaptureAnalysis.avgTicksLost > 0
+                                            ? (tickCaptureAnalysis.avgTicksWon / tickCaptureAnalysis.avgTicksLost).toFixed(2)
+                                            : '∞'}
+                                    </div>
+                                    <div className="tick-label">Win/Loss Tick Ratio</div>
+                                </div>
+                            </div>
+
+                            <div className="tick-distribution">
+                                <h3 className="subsection-title">Win Distribution by Ticks</h3>
+                                <div className="tick-bars">
+                                    {['1', '2', '3', '4', '5+'].map(bucket => {
+                                        const data = tickCaptureAnalysis.distribution[bucket];
+                                        const percent = data?.percent || 0;
+                                        const count = data?.count || 0;
+                                        return (
+                                            <div key={bucket} className="tick-bar-item">
+                                                <div className="tick-bar-label">{bucket} tick{bucket !== '1' ? 's' : ''}</div>
+                                                <div className="tick-bar-container">
+                                                    <div
+                                                        className="tick-bar-fill"
+                                                        style={{ width: `${Math.min(percent, 100)}%` }}
+                                                    />
+                                                    <span className="tick-bar-percent">{percent.toFixed(0)}%</span>
+                                                </div>
+                                                <div className="tick-bar-count">{count} trades</div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Day Analysis */}
                 <div className="analytics-section">

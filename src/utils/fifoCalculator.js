@@ -321,7 +321,13 @@ export function calculatePnLStats(matches) {
             maxLossDollars: 0,
             profitFactor: 0,
             totalVolume: 0,
-            totalRTs: 0
+            totalRTs: 0,
+            tickCapture: {
+                avgTicksWon: 0,
+                avgTicksLost: 0,
+                distribution: {},
+                winsByTicks: {}
+            }
         };
     }
 
@@ -345,6 +351,9 @@ export function calculatePnLStats(matches) {
     // Win rate excludes scratches from denominator for fair comparison
     const decisiveTrades = wins.length + losses.length;
 
+    // Calculate tick capture distribution for winning trades
+    const tickCapture = calculateTickCapture(wins, losses, TICK_SIZE);
+
     return {
         totalTrades: matches.length,
         winningTrades: wins.length,
@@ -362,7 +371,83 @@ export function calculatePnLStats(matches) {
         maxLossDollars: losses.length > 0 ? Math.min(...losses.map(m => m.netPnLDollars || 0)) : 0,
         profitFactor: totalLossesDollars > 0 ? totalWinsDollars / totalLossesDollars : totalWinsDollars > 0 ? Infinity : 0,
         totalLots,
-        totalRTLegs
+        totalRTLegs,
+        tickCapture
+    };
+}
+
+/**
+ * Calculate tick capture distribution for trades
+ * Shows what percentage of winning trades captured 1 tick, 2 ticks, etc.
+ */
+function calculateTickCapture(wins, losses, tickSize) {
+    if (wins.length === 0 && losses.length === 0) {
+        return {
+            avgTicksWon: 0,
+            avgTicksLost: 0,
+            distribution: {},
+            winsByTicks: {},
+            lossesByTicks: {}
+        };
+    }
+
+    // Calculate ticks for each winning trade
+    const winTicks = wins.map(m => {
+        const ticks = Math.round(m.pnl / tickSize);
+        return { ticks, pnl: m.pnl, pnlDollars: m.pnlDollars };
+    });
+
+    // Calculate ticks for each losing trade (absolute value)
+    const lossTicks = losses.map(m => {
+        const ticks = Math.abs(Math.round(m.pnl / tickSize));
+        return { ticks, pnl: m.pnl, pnlDollars: m.pnlDollars };
+    });
+
+    // Average ticks won/lost
+    const totalTicksWon = winTicks.reduce((sum, w) => sum + w.ticks, 0);
+    const totalTicksLost = lossTicks.reduce((sum, l) => sum + l.ticks, 0);
+    const avgTicksWon = wins.length > 0 ? totalTicksWon / wins.length : 0;
+    const avgTicksLost = losses.length > 0 ? totalTicksLost / losses.length : 0;
+
+    // Group wins by tick capture (1, 2, 3, 4, 5+)
+    const winsByTicks = {};
+    for (const w of winTicks) {
+        const bucket = w.ticks >= 5 ? '5+' : String(w.ticks);
+        if (!winsByTicks[bucket]) {
+            winsByTicks[bucket] = { count: 0, totalPnL: 0 };
+        }
+        winsByTicks[bucket].count++;
+        winsByTicks[bucket].totalPnL += w.pnlDollars || 0;
+    }
+
+    // Calculate percentages for win distribution
+    const distribution = {};
+    for (const [ticks, data] of Object.entries(winsByTicks)) {
+        distribution[ticks] = {
+            count: data.count,
+            percent: (data.count / wins.length) * 100,
+            totalPnL: data.totalPnL,
+            avgPnL: data.totalPnL / data.count
+        };
+    }
+
+    // Group losses by tick loss
+    const lossesByTicks = {};
+    for (const l of lossTicks) {
+        const bucket = l.ticks >= 5 ? '5+' : String(l.ticks);
+        if (!lossesByTicks[bucket]) {
+            lossesByTicks[bucket] = { count: 0, totalPnL: 0 };
+        }
+        lossesByTicks[bucket].count++;
+        lossesByTicks[bucket].totalPnL += Math.abs(l.pnlDollars || 0);
+    }
+
+    return {
+        avgTicksWon,
+        avgTicksLost,
+        distribution,
+        winsByTicks,
+        lossesByTicks
     };
 }
 

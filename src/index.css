@@ -2316,3 +2316,174 @@ body::before {
   font-weight: 600;
   font-family: 'Fira Code', monospace;
 }
+
+/* Tick Capture Analysis */
+.tick-capture-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.tick-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-md);
+}
+
+.tick-summary-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  text-align: center;
+  transition: var(--transition-normal);
+}
+
+.tick-summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--glow-cyan);
+}
+
+.tick-summary-card.positive {
+  border-color: rgba(0, 255, 136, 0.3);
+}
+
+.tick-summary-card.negative {
+  border-color: rgba(255, 0, 68, 0.3);
+}
+
+.tick-summary-card.ratio {
+  border-color: rgba(0, 240, 255, 0.3);
+}
+
+.tick-summary-card .tick-value {
+  font-size: 2rem;
+  font-weight: 700;
+  font-family: 'Fira Code', monospace;
+  margin-bottom: var(--spacing-xs);
+}
+
+.tick-summary-card.positive .tick-value {
+  color: var(--pnl-positive);
+}
+
+.tick-summary-card.negative .tick-value {
+  color: var(--pnl-negative);
+}
+
+.tick-summary-card.ratio .tick-value {
+  color: var(--neon-cyan);
+}
+
+.tick-summary-card .tick-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tick-distribution {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+}
+
+.subsection-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-md);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tick-bars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.tick-bar-item {
+  display: grid;
+  grid-template-columns: 70px 1fr 80px;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+
+.tick-bar-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.tick-bar-container {
+  position: relative;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.tick-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-green));
+  border-radius: var(--radius-sm);
+  transition: width 0.5s ease;
+  min-width: 2px;
+}
+
+.tick-bar-percent {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: 'Fira Code', monospace;
+  color: var(--text-primary);
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+}
+
+.tick-bar-count {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+/* Structure Card Tick Badge */
+.tick-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 240, 255, 0.1);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  font-family: 'Fira Code', monospace;
+  color: var(--neon-cyan);
+}
+
+.tick-badge.positive {
+  background: rgba(0, 255, 136, 0.1);
+  border-color: rgba(0, 255, 136, 0.3);
+  color: var(--pnl-positive);
+}
+
+.tick-badge.negative {
+  background: rgba(255, 0, 68, 0.1);
+  border-color: rgba(255, 0, 68, 0.3);
+  color: var(--pnl-negative);
+}
+
+@media (max-width: 768px) {
+  .tick-summary-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .tick-bar-item {
+    grid-template-columns: 60px 1fr 60px;
+    gap: var(--spacing-sm);
+  }
+}
