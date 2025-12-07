@@ -99,11 +99,19 @@ export default function StructureCard({ structure, onClick }) {
                         <span style={{ color: 'var(--neon-orange)' }}>{stats?.scratchTrades || 0}</span>
                     </span>
                 </span>
-                <span>
-                    <span className="label">RT Legs</span>
-                    <span className="value">{stats?.totalRTLegs || Math.round((structure.totalRTCost || 0) / 1.65) || 0}</span>
-                </span>
             </div>
+
+            {/* Top 3 Tick Capture */}
+            {stats?.tickCapture?.top3?.length > 0 && (
+                <div className="tick-capture-row">
+                    {stats.tickCapture.top3.map((item, idx) => (
+                        <span key={idx} className="tick-capture-item">
+                            <span className="tick-num">{item.ticks}T</span>
+                            <span className="tick-pct">{item.percent.toFixed(0)}%</span>
+                        </span>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

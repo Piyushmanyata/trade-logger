@@ -464,12 +464,23 @@ function calculateTickCapture(wins, losses, tickSize) {
         lossesByTicks[bucket].totalGrossPnL += l.grossDollars;
     }
 
+    // Calculate top 3 tick captures (sorted by percentage)
+    const top3 = Object.entries(distribution)
+        .sort((a, b) => b[1].percent - a[1].percent)
+        .slice(0, 3)
+        .map(([ticks, data]) => ({
+            ticks,
+            count: data.count,
+            percent: data.percent
+        }));
+
     return {
         avgTicksWon,
         avgTicksLost,
         distribution,
         winsByTicks,
-        lossesByTicks
+        lossesByTicks,
+        top3
     };
 }
 

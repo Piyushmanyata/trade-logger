@@ -2542,3 +2542,74 @@ body::before {
 .tick-stat.ratio .value {
   color: var(--neon-cyan);
 }
+
+/* Tick Capture Row on Structure Cards */
+.tick-capture-row {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-sm);
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--glass-border);
+}
+
+.tick-capture-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(0, 240, 255, 0.1);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  border-radius: var(--radius-sm);
+  font-size: 0.7rem;
+  font-family: 'Fira Code', monospace;
+}
+
+.tick-capture-item .tick-num {
+  color: var(--neon-cyan);
+  font-weight: 600;
+}
+
+.tick-capture-item .tick-pct {
+  color: var(--pnl-positive);
+  font-weight: 700;
+}
+
+/* Rankings Header and Toggle */
+.rankings-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.rankings-toggle {
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+}
+
+.rankings-toggle button {
+  flex: 1;
+  padding: 6px 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.rankings-toggle button:hover {
+  color: var(--text-primary);
+}
+
+.rankings-toggle button.active {
+  background: var(--neon-cyan);
+  color: var(--bg-primary);
+  font-weight: 600;
+}

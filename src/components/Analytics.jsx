@@ -100,6 +100,7 @@ function analyzeDays(dailySummary) {
 
 export default function Analytics({ structuresData }) {
     const [selectedChartType, setSelectedChartType] = useState('equity');
+    const [rankingsMode, setRankingsMode] = useState('top'); // 'top' or 'bottom'
 
     // All matches combined
     const allMatches = useMemo(() =>
@@ -536,32 +537,53 @@ export default function Analytics({ structuresData }) {
             {/* Rankings Sidebar */}
             <div className="analytics-sidebar">
                 <div className="analytics-section">
-                    <h2 className="section-title">
-                        <Trophy size={20} />
-                        Performance Rankings
-                    </h2>
+                    <div className="rankings-header">
+                        <h2 className="section-title">
+                            <Trophy size={20} />
+                            Performance Rankings
+                        </h2>
+                        <div className="rankings-toggle">
+                            <button
+                                className={rankingsMode === 'top' ? 'active' : ''}
+                                onClick={() => setRankingsMode('top')}
+                            >
+                                Top 10
+                            </button>
+                            <button
+                                className={rankingsMode === 'bottom' ? 'active' : ''}
+                                onClick={() => setRankingsMode('bottom')}
+                            >
+                                Bottom 10
+                            </button>
+                        </div>
+                    </div>
 
                     <div className="rankings-list">
-                        {rankedStructures.map((structure, index) => (
-                            <div key={structure.name} className="ranking-item">
-                                <div className={`ranking-position ${index === 0 ? 'top-1' :
-                                    index === 1 ? 'top-2' :
-                                        index === 2 ? 'top-3' : 'default'
-                                    }`}>
-                                    {index + 1}
-                                </div>
-                                <div className="ranking-info">
-                                    <div className="ranking-name">{structure.name}</div>
-                                    <div className="ranking-meta">
-                                        {structure.stats?.totalTrades || 0} trades •
-                                        {(structure.stats?.winRate || 0).toFixed(0)}% win
+                        {(rankingsMode === 'top'
+                            ? rankedStructures.slice(0, 10)
+                            : rankedStructures.slice(-10).reverse()
+                        ).map((structure, index) => {
+                            const actualRank = rankingsMode === 'top'
+                                ? index + 1
+                                : rankedStructures.length - 9 + index;
+                            return (
+                                <div key={structure.name} className="ranking-item">
+                                    <div className={`ranking-position ${actualRank <= 3 ? `top-${actualRank}` : 'default'}`}>
+                                        {actualRank}
+                                    </div>
+                                    <div className="ranking-info">
+                                        <div className="ranking-name">{structure.name}</div>
+                                        <div className="ranking-meta">
+                                            {structure.stats?.totalTrades || 0} trades •
+                                            {(structure.stats?.winRate || 0).toFixed(0)}% win
+                                        </div>
+                                    </div>
+                                    <div className={`ranking-pnl ${(structure.realizedPnLDollars || 0) >= 0 ? 'positive' : 'negative'}`}>
+                                        {formatDollars(structure.realizedPnLDollars)}
                                     </div>
                                 </div>
-                                <div className={`ranking-pnl ${(structure.realizedPnLDollars || 0) >= 0 ? 'positive' : 'negative'}`}>
-                                    {formatDollars(structure.realizedPnLDollars)}
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
 
