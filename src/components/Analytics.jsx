@@ -281,6 +281,7 @@ export default function Analytics({ structuresData }) {
                     </h2>
 
                     <div className="kpi-grid">
+                        {/* Row 1: Primary Metrics */}
                         <div className="kpi-card primary">
                             <div className={`kpi-value ${portfolioStats.totalPnL >= 0 ? 'positive' : 'negative'}`}>
                                 {formatDollars(portfolioStats.totalPnL)}
@@ -305,6 +306,8 @@ export default function Analytics({ structuresData }) {
                             </div>
                             <div className="kpi-label">Expectancy / Trade</div>
                         </div>
+
+                        {/* Row 2: Risk Metrics */}
                         <div className="kpi-card">
                             <div className={`kpi-value ${advancedMetrics.sharpeRatio >= 0.5 ? 'positive' : advancedMetrics.sharpeRatio >= 0 ? '' : 'negative'}`}>
                                 {formatRatio(advancedMetrics.sharpeRatio)}
@@ -328,6 +331,52 @@ export default function Analytics({ structuresData }) {
                                 -{portfolioStats.rtCostRatio.toFixed(1)}%
                             </div>
                             <div className="kpi-label">RT Cost Drag</div>
+                        </div>
+
+                        {/* Row 3: Win/Loss Details */}
+                        <div className="kpi-card">
+                            <div className="kpi-value positive">
+                                {formatDollars(winLossAnalysis.avgWin)}
+                            </div>
+                            <div className="kpi-label">Avg Win</div>
+                        </div>
+                        <div className="kpi-card">
+                            <div className="kpi-value negative">
+                                -{formatDollars(winLossAnalysis.avgLoss)}
+                            </div>
+                            <div className="kpi-label">Avg Loss</div>
+                        </div>
+                        <div className="kpi-card">
+                            <div className={`kpi-value ${winLossAnalysis.avgLoss > 0 ? (winLossAnalysis.avgWin / winLossAnalysis.avgLoss >= 1 ? 'positive' : 'negative') : ''}`}>
+                                {winLossAnalysis.avgLoss > 0 ? (winLossAnalysis.avgWin / winLossAnalysis.avgLoss).toFixed(2) : '∞'}
+                            </div>
+                            <div className="kpi-label">Payoff Ratio (W/L)</div>
+                        </div>
+                        <div className="kpi-card">
+                            <div className="kpi-value">{allMatches.length}</div>
+                            <div className="kpi-label">Total Trades</div>
+                        </div>
+
+                        {/* Row 4: Streaks & Extremes */}
+                        <div className="kpi-card">
+                            <div className="kpi-value positive">{advancedMetrics.maxWinStreak}</div>
+                            <div className="kpi-label">Max Win Streak</div>
+                        </div>
+                        <div className="kpi-card">
+                            <div className="kpi-value negative">{advancedMetrics.maxLossStreak}</div>
+                            <div className="kpi-label">Max Loss Streak</div>
+                        </div>
+                        <div className="kpi-card">
+                            <div className="kpi-value positive">
+                                {formatDollars(winLossAnalysis.largestWin)}
+                            </div>
+                            <div className="kpi-label">Largest Win</div>
+                        </div>
+                        <div className="kpi-card">
+                            <div className="kpi-value negative">
+                                {formatDollars(winLossAnalysis.largestLoss)}
+                            </div>
+                            <div className="kpi-label">Largest Loss</div>
                         </div>
                     </div>
                 </div>
