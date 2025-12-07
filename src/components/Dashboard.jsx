@@ -186,24 +186,7 @@ export default function Dashboard({ structuresData, onStructureClick }) {
                 <span><strong>RT Cost:</strong> ${RT_COST_PER_LOT}/leg × 2 per RT</span>
             </div>
 
-            {/* PROMINENT OPEN POSITIONS BANNER */}
-            {summaryStats.openPositionsCount > 0 && (
-                <div className="open-positions-banner">
-                    <AlertCircle size={20} />
-                    <strong>Open Positions:</strong>
-                    <span className="long">{summaryStats.totalOpenLong} Long</span>
-                    <span className="divider">|</span>
-                    <span className="short">{summaryStats.totalOpenShort} Short</span>
-                    <span className="divider">|</span>
-                    <span>{summaryStats.openPositionsCount} structures</span>
-                    <button
-                        className="view-open-btn"
-                        onClick={() => setFilterType('open')}
-                    >
-                        View Open Only
-                    </button>
-                </div>
-            )}
+
 
             {/* Summary Stats - Hero Row + Secondary Row */}
             <div className="dashboard-stats">
@@ -285,15 +268,37 @@ export default function Dashboard({ structuresData, onStructureClick }) {
                     />
                 </div>
 
+                {/* Quick Position Filters */}
+                <div className="quick-filter-buttons">
+                    <button
+                        className={`quick-filter-btn open ${filterType === 'open' ? 'active' : ''}`}
+                        onClick={() => setFilterType(filterType === 'open' ? 'all' : 'open')}
+                        title="View all open positions"
+                    >
+                        ⚠️ Open
+                    </button>
+                    <button
+                        className={`quick-filter-btn long ${filterType === 'long' ? 'active' : ''}`}
+                        onClick={() => setFilterType(filterType === 'long' ? 'all' : 'long')}
+                        title="View long positions only"
+                    >
+                        ▲ Long
+                    </button>
+                    <button
+                        className={`quick-filter-btn short ${filterType === 'short' ? 'active' : ''}`}
+                        onClick={() => setFilterType(filterType === 'short' ? 'all' : 'short')}
+                        title="View short positions only"
+                    >
+                        ▼ Short
+                    </button>
+                </div>
+
                 <select
                     className="filter-select"
-                    value={filterType}
+                    value={filterType === 'long' || filterType === 'short' || filterType === 'open' ? 'all' : filterType}
                     onChange={(e) => setFilterType(e.target.value)}
                 >
                     <option value="all">All Types</option>
-                    <option value="open">⚠️ Open Positions</option>
-                    <option value="long">▲ Long Positions</option>
-                    <option value="short">▼ Short Positions</option>
                     {structureTypes.map(type => (
                         <option key={type} value={type}>{type}</option>
                     ))}

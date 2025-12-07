@@ -818,6 +818,54 @@ body::before {
   letter-spacing: 1px;
 }
 
+/* ===== Quick Filter Buttons ===== */
+.quick-filter-buttons {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.quick-filter-btn {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.quick-filter-btn:hover {
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
+
+.quick-filter-btn.open.active {
+  background: rgba(255, 170, 0, 0.2);
+  border-color: var(--neon-orange);
+  color: var(--neon-orange);
+}
+
+.quick-filter-btn.long.active {
+  background: rgba(0, 255, 136, 0.15);
+  border-color: var(--pnl-positive);
+  color: var(--pnl-positive);
+}
+
+.quick-filter-btn.short.active {
+  background: rgba(255, 0, 68, 0.15);
+  border-color: var(--pnl-negative);
+  color: var(--pnl-negative);
+}
+
+@media (max-width: 768px) {
+  .quick-filter-buttons {
+    flex-wrap: wrap;
+  }
+}
+
 /* ===== Structure Cards Grid ===== */
 .structures-grid {
   display: grid;
