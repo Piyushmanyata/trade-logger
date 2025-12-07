@@ -2,48 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Search, Activity, AlertCircle } from 'lucide-react';
 import StructureCard from './StructureCard';
 import { TICK_VALUE, TICK_SIZE, RT_COST_PER_LOT } from '../utils/fifoCalculator';
-
-/**
- * Calculate Sharpe Ratio from trade returns
- * Sharpe = (Average Return - Risk Free Rate) / Std Dev of Returns
- * We use 0 as risk-free rate for simplicity
- */
-function calculateSharpeRatio(matches) {
-    if (!matches || matches.length < 2) return 0;
-
-    const returns = matches.map(m => m.netPnLDollars || 0);
-    const avgReturn = returns.reduce((a, b) => a + b, 0) / returns.length;
-
-    const squaredDiffs = returns.map(r => Math.pow(r - avgReturn, 2));
-    const variance = squaredDiffs.reduce((a, b) => a + b, 0) / returns.length;
-    const stdDev = Math.sqrt(variance);
-
-    if (stdDev === 0) return avgReturn > 0 ? Infinity : 0;
-    return avgReturn / stdDev;
-}
-
-/**
- * Calculate Sortino Ratio (only considers downside deviation)
- * Sortino = (Average Return - Target) / Downside Deviation
- * Target = 0 (we want positive returns)
- */
-function calculateSortinoRatio(matches) {
-    if (!matches || matches.length < 2) return 0;
-
-    const returns = matches.map(m => m.netPnLDollars || 0);
-    const avgReturn = returns.reduce((a, b) => a + b, 0) / returns.length;
-
-    // Only consider negative returns for downside deviation
-    const negativeReturns = returns.filter(r => r < 0);
-    if (negativeReturns.length === 0) return avgReturn > 0 ? Infinity : 0;
-
-    const squaredNegDiffs = negativeReturns.map(r => Math.pow(r, 2));
-    const downsideVariance = squaredNegDiffs.reduce((a, b) => a + b, 0) / returns.length;
-    const downsideDev = Math.sqrt(downsideVariance);
-
-    if (downsideDev === 0) return avgReturn > 0 ? Infinity : 0;
-    return avgReturn / downsideDev;
-}
+import { calculateSharpeRatio, calculateSortinoRatio } from '../utils/insightsGenerator';
 
 export default function Dashboard({ structuresData, onStructureClick }) {
     const [search, setSearch] = useState('');
@@ -60,6 +19,9 @@ export default function Dashboard({ structuresData, onStructureClick }) {
 
         // All matches across all structures
         const allMatches = structuresData.flatMap(s => s.matches || []);
+
+        // Extract returns for ratio calculations
+        const returns = allMatches.map(m => m.netPnLDollars || 0);
 
         // Classify: Win (gross > 0), Loss (gross < 0), Scratch (gross = 0)
         const winningTrades = allMatches.filter(m => (m.pnlDollars || 0) > 0);
@@ -80,9 +42,9 @@ export default function Dashboard({ structuresData, onStructureClick }) {
         const totalLosses = Math.abs(losingTrades.reduce((sum, m) => sum + (m.netPnLDollars || 0), 0));
         const profitFactor = totalLosses > 0 ? totalWins / totalLosses : (totalWins > 0 ? Infinity : 0);
 
-        // Sharpe and Sortino
-        const sharpeRatio = calculateSharpeRatio(allMatches);
-        const sortinoRatio = calculateSortinoRatio(allMatches);
+        // Sharpe and Sortino - pass returns array
+        const sharpeRatio = calculateSharpeRatio(returns);
+        const sortinoRatio = calculateSortinoRatio(returns);
 
         // Open positions summary
         const structuresWithOpen = structuresData.filter(s => s.netPosition !== 0);
@@ -103,8 +65,6 @@ export default function Dashboard({ structuresData, onStructureClick }) {
             profitFactor,
             sharpeRatio,
             sortinoRatio,
-            winningTrades: winningTrades.length,
-            losingTrades: losingTrades.length,
             openPositionsCount: structuresWithOpen.length,
             totalOpenLong,
             totalOpenShort,

@@ -73,15 +73,24 @@ export function exportTrades(trades) {
 }
 
 /**
- * Export trades as CSV
+ * Export trades as CSV with proper escaping
  */
 export function exportTradesCSV(trades) {
+    // Helper to escape CSV fields with commas, quotes, or newlines
+    const escapeCSV = (value) => {
+        const str = String(value);
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+            return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+    };
+
     const headers = ['Date', 'Time', 'Exchange', 'Structure', 'Side', 'Quantity', 'Price'];
     const rows = trades.map(t => [
         t.date.toISOString().split('T')[0],
         t.time,
-        t.exchange,
-        t.structure,
+        escapeCSV(t.exchange),
+        escapeCSV(t.structure),
         t.side,
         t.quantity,
         t.price

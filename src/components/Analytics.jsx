@@ -1,37 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import {
-    BarChart2, Trophy, TrendingUp, TrendingDown, Layers, PieChart,
+    BarChart2, Trophy, TrendingUp, TrendingDown, Layers,
     Target, Zap, Calendar, Clock, AlertTriangle
 } from 'lucide-react';
-import { MultiStructurePnLChart, DailyPnLChart, EquityCurveChart } from './Charts';
-import { rankStructures, calculatePortfolioStats, calculateDailySummary } from '../utils/insightsGenerator';
+import { MultiStructurePnLChart, DailyPnLChart } from './Charts';
+import { rankStructures, calculatePortfolioStats, calculateDailySummary, calculateSharpeRatio, calculateSortinoRatio } from '../utils/insightsGenerator';
 import { TICK_VALUE, TICK_SIZE, RT_COST_PER_LOT } from '../utils/fifoCalculator';
-
-/**
- * Calculate Sharpe Ratio
- */
-function calculateSharpeRatio(returns) {
-    if (!returns || returns.length < 2) return 0;
-    const avgReturn = returns.reduce((a, b) => a + b, 0) / returns.length;
-    const variance = returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length;
-    const stdDev = Math.sqrt(variance);
-    if (stdDev === 0) return avgReturn > 0 ? Infinity : 0;
-    return avgReturn / stdDev;
-}
-
-/**
- * Calculate Sortino Ratio (only penalizes downside)
- */
-function calculateSortinoRatio(returns) {
-    if (!returns || returns.length < 2) return 0;
-    const avgReturn = returns.reduce((a, b) => a + b, 0) / returns.length;
-    const negativeReturns = returns.filter(r => r < 0);
-    if (negativeReturns.length === 0) return avgReturn > 0 ? Infinity : 0;
-    const downsideVariance = negativeReturns.reduce((sum, r) => sum + Math.pow(r, 2), 0) / returns.length;
-    const downsideDev = Math.sqrt(downsideVariance);
-    if (downsideDev === 0) return avgReturn > 0 ? Infinity : 0;
-    return avgReturn / downsideDev;
-}
 
 /**
  * Calculate Maximum Drawdown
@@ -452,8 +426,8 @@ export default function Analytics({ structuresData }) {
                         {rankedStructures.map((structure, index) => (
                             <div key={structure.name} className="ranking-item">
                                 <div className={`ranking-position ${index === 0 ? 'top-1' :
-                                        index === 1 ? 'top-2' :
-                                            index === 2 ? 'top-3' : 'default'
+                                    index === 1 ? 'top-2' :
+                                        index === 2 ? 'top-3' : 'default'
                                     }`}>
                                     {index + 1}
                                 </div>

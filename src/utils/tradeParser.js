@@ -273,7 +273,7 @@ function parseTradeRow(row) {
     }
 
     return {
-        id: `${parsedDate.getTime()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: `${parsedDate.getTime()}-${Math.random().toString(36).substring(2, 11)}`,
         date: parsedDate,
         dateStr: parsedDate.toISOString().split('T')[0],
         time: trade.time || '',
@@ -311,7 +311,7 @@ function parseTradeRowPositional(parts) {
     if (quantity === 0) return null;
 
     return {
-        id: `${parsedDate.getTime()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: `${parsedDate.getTime()}-${Math.random().toString(36).substring(2, 11)}`,
         date: parsedDate,
         dateStr: parsedDate.toISOString().split('T')[0],
         time: timeStr,
@@ -382,7 +382,7 @@ export function createManualTrade(data) {
     const normalizedSide = side.toUpperCase() === 'BUY' || side.toUpperCase() === 'B' ? 'BUY' : 'SELL';
 
     return {
-        id: `${parsedDate.getTime()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: `${parsedDate.getTime()}-${Math.random().toString(36).substring(2, 11)}`,
         date: parsedDate,
         dateStr: parsedDate.toISOString().split('T')[0],
         time: time || parsedDate.toTimeString().split(' ')[0],

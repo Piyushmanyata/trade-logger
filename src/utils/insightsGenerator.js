@@ -3,6 +3,34 @@
  */
 
 /**
+ * Calculate Sharpe Ratio from trade returns
+ * Sharpe = Average Return / Std Dev of Returns (using 0 as risk-free rate)
+ */
+export function calculateSharpeRatio(returns) {
+    if (!returns || returns.length < 2) return 0;
+    const avgReturn = returns.reduce((a, b) => a + b, 0) / returns.length;
+    const variance = returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length;
+    const stdDev = Math.sqrt(variance);
+    if (stdDev === 0) return avgReturn > 0 ? Infinity : 0;
+    return avgReturn / stdDev;
+}
+
+/**
+ * Calculate Sortino Ratio (only penalizes downside deviation)
+ * Sortino = Average Return / Downside Deviation
+ */
+export function calculateSortinoRatio(returns) {
+    if (!returns || returns.length < 2) return 0;
+    const avgReturn = returns.reduce((a, b) => a + b, 0) / returns.length;
+    const negativeReturns = returns.filter(r => r < 0);
+    if (negativeReturns.length === 0) return avgReturn > 0 ? Infinity : 0;
+    const downsideVariance = negativeReturns.reduce((sum, r) => sum + Math.pow(r, 2), 0) / returns.length;
+    const downsideDev = Math.sqrt(downsideVariance);
+    if (downsideDev === 0) return avgReturn > 0 ? Infinity : 0;
+    return avgReturn / downsideDev;
+}
+
+/**
  * Calculate trading performance metrics
  */
 export function calculatePerformanceMetrics(structureData) {

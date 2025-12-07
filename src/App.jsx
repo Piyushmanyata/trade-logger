@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { LayoutDashboard, BarChart2 } from 'lucide-react';
+import { LayoutDashboard, BarChart2, Settings } from 'lucide-react';
 import TradeInput from './components/TradeInput';
 import Dashboard from './components/Dashboard';
 import Analytics from './components/Analytics';
 import StructureDetail from './components/StructureDetail';
+import SettingsPanel from './components/SettingsPanel';
 import { loadTrades, saveTrades, clearTrades, exportTradesCSV } from './utils/storage';
 import { groupTradesByStructure } from './utils/tradeParser';
 import { calculateFIFOPnL, calculatePnLStats } from './utils/fifoCalculator';
@@ -13,6 +14,7 @@ function App() {
   const [trades, setTrades] = useState([]);
   const [activeView, setActiveView] = useState('dashboard');
   const [selectedStructure, setSelectedStructure] = useState(null);
+  const [showSettings, setShowSettings] = useState(false);
 
   // Load trades from storage on mount
   useEffect(() => {
@@ -133,6 +135,13 @@ function App() {
               <BarChart2 size={18} />
               Analytics
             </button>
+            <button
+              className="nav-btn settings-btn"
+              onClick={() => setShowSettings(true)}
+            >
+              <Settings size={18} />
+              Settings
+            </button>
           </nav>
         </div>
       </header>
@@ -164,6 +173,10 @@ function App() {
           onClose={() => setSelectedStructure(null)}
           onDeleteTrade={handleDeleteTrade}
         />
+      )}
+
+      {showSettings && (
+        <SettingsPanel onClose={() => setShowSettings(false)} />
       )}
     </div>
   );

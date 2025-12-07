@@ -4,26 +4,17 @@ import { TrendingUp, TrendingDown, Activity } from 'lucide-react';
 export default function StructureCard({ structure, onClick }) {
     const {
         name,
-        realizedPnL,
         realizedPnLDollars,
         grossPnLDollars,
         totalRTCost,
         netPosition,
-        openLongQty,
-        openShortQty,
-        avgBuyPrice,
-        avgSellPrice,
-        totalBuyQty,
-        totalSellQty,
         stats,
-        metadata,
-        rtLegs,
-        totalRtLegsPerRoundTrip
+        metadata
     } = structure;
 
     const isProfitable = realizedPnLDollars > 0;
     const isLoss = realizedPnLDollars < 0;
-    const isFlat = realizedPnLDollars === 0 && realizedPnL === 0;
+    const isFlat = realizedPnLDollars === 0;
     const hasOpenPosition = netPosition !== 0;
 
     const formatPrice = (value) => {
