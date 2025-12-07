@@ -97,11 +97,11 @@ export const STRUCTURE_RT_LEGS = {
     'SON Sep26 3 D-Fly': 4,
     'SON Dec26 3 D-Fly': 4,
 
-    // SON Fly Condors (6 RT entry)
-    'SON Sep26 Fly Condor': 6,
-    'SON Dec26 Fly Condor': 6,
-    'SON Mar27 Fly Condor': 6,
-    'SON Jun27 Fly Condor': 6,
+    // SON Fly Condors (3 RT entry)
+    'SON Sep26 Fly Condor': 3,
+    'SON Dec26 Fly Condor': 3,
+    'SON Mar27 Fly Condor': 3,
+    'SON Jun27 Fly Condor': 3,
 
     // SO3 3mo Condors (2 RT entry)
     'SO3 Sep26 3mo Condor': 2,
@@ -221,7 +221,7 @@ export function getStructureRTLegs(structureName) {
     }
 
     // Pattern-based matching for unknown structures (order matters!)
-    if (normalized.includes('fly condor')) return 6;
+    if (normalized.includes('fly condor')) return 3;
     if (normalized.includes('3 d-fly') || normalized.includes('3 d fly')) return 4;
     if (normalized.includes('d-fly') || normalized.includes('d fly')) return 4;
     if (normalized.includes('3 fly')) return 2;
