@@ -337,8 +337,10 @@ export function calculatePnLStats(matches) {
     const totalWinsDollars = wins.reduce((sum, m) => sum + (m.netPnLDollars || 0), 0);
     const totalLossesDollars = Math.abs(losses.reduce((sum, m) => sum + (m.netPnLDollars || 0), 0));
 
-    const totalVolume = matches.reduce((sum, m) => sum + m.matchQty, 0);
-    const totalRTs = matches.reduce((sum, m) => sum + m.matchQty, 0); // Each match = 1 RT per lot
+    const totalLots = matches.reduce((sum, m) => sum + m.matchQty, 0);
+    // Total RT legs = sum of (matchQty × rtLegsTotal) = rtCost ÷ $1.65
+    const totalRTCostFromMatches = matches.reduce((sum, m) => sum + (m.rtCost || 0), 0);
+    const totalRTLegs = Math.round(totalRTCostFromMatches / 1.65); // Actual RT legs charged
 
     // Win rate excludes scratches from denominator for fair comparison
     const decisiveTrades = wins.length + losses.length;
@@ -359,8 +361,8 @@ export function calculatePnLStats(matches) {
         maxWinDollars: wins.length > 0 ? Math.max(...wins.map(m => m.netPnLDollars || 0)) : 0,
         maxLossDollars: losses.length > 0 ? Math.min(...losses.map(m => m.netPnLDollars || 0)) : 0,
         profitFactor: totalLossesDollars > 0 ? totalWinsDollars / totalLossesDollars : totalWinsDollars > 0 ? Infinity : 0,
-        totalVolume,
-        totalRTs
+        totalLots,
+        totalRTLegs
     };
 }
 

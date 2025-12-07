@@ -55,7 +55,8 @@ export default function Dashboard({ structuresData, onStructureClick }) {
         const totalPnLDollars = structuresData.reduce((sum, s) => sum + (s.realizedPnLDollars || 0), 0);
         const totalGrossDollars = structuresData.reduce((sum, s) => sum + (s.grossPnLDollars || 0), 0);
         const totalRTCost = structuresData.reduce((sum, s) => sum + (s.totalRTCost || 0), 0);
-        const totalRTs = structuresData.reduce((sum, s) => sum + (s.stats?.totalRTs || s.closedQty || 0), 0);
+        // Total RT Legs = rtCost ÷ $1.65 (so totalRTLegs × $1.65 = totalRTCost)
+        const totalRTLegs = Math.round(totalRTCost / 1.65);
 
         // All matches across all structures
         const allMatches = structuresData.flatMap(s => s.matches || []);
@@ -92,7 +93,7 @@ export default function Dashboard({ structuresData, onStructureClick }) {
             totalPnLDollars,
             totalGrossDollars,
             totalRTCost,
-            totalRTs,
+            totalRTLegs,
             totalTrades: allMatches.length,
             winRate,
             scratchRate,
@@ -245,8 +246,8 @@ export default function Dashboard({ structuresData, onStructureClick }) {
                     <div className="stat-label">Total RT Costs</div>
                 </div>
                 <div className="stat-card">
-                    <div className="stat-value">{summaryStats.totalRTs}</div>
-                    <div className="stat-label">Total RTs</div>
+                    <div className="stat-value">{summaryStats.totalRTLegs}</div>
+                    <div className="stat-label">RT Legs</div>
                 </div>
                 <div className="stat-card">
                     <div className={`stat-value ${summaryStats.winRate >= 50 ? 'positive' : 'negative'}`}>

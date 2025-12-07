@@ -107,8 +107,8 @@ export default function StructureCard({ structure, onClick }) {
                     </span>
                 </span>
                 <span>
-                    <span className="label">RTs</span>
-                    <span className="value">{stats?.totalRTs || structure.closedQty || 0}</span>
+                    <span className="label">RT Legs</span>
+                    <span className="value">{stats?.totalRTLegs || Math.round((structure.totalRTCost || 0) / 1.65) || 0}</span>
                 </span>
             </div>
         </div>
