@@ -4,8 +4,8 @@
  * 
  * RT COST FORMULA:
  * - Entry: rtLegs × quantity × $1.65
- * - Exit: 1 × quantity × $1.65 (always 1 additional RT to close)
- * - Total per round-trip: (rtLegs + 1) × quantity × $1.65
+ * - Exit: rtLegs × quantity × $1.65 (same legs as entry)
+ * - Total per round-trip: rtLegs × 2 × quantity × $1.65
  */
 
 // Trading constants (can be customized via settings)
@@ -251,15 +251,15 @@ export function pricePnLToDollars(pricePnL) {
 
 /**
  * Calculate RT cost for a CLOSED trade (entry + exit)
- * Entry costs rtLegs per lot, Exit costs 1 additional RT per lot
+ * Entry and Exit both cost rtLegs per lot (same structure legs)
  * 
  * @param {number} quantity - Number of lots traded
- * @param {number} rtLegs - Number of RT legs for the structure on entry
+ * @param {number} rtLegs - Number of RT legs for the structure
  * @returns {number} Total RT cost in dollars for the round-trip
  */
 export function calculateRTCost(quantity, rtLegs) {
-    // Entry RT + Exit RT (1 additional)
-    const totalLegs = rtLegs + 1;
+    // Entry RT + Exit RT (same legs for both)
+    const totalLegs = rtLegs * 2;
     return quantity * totalLegs * RT_COST_PER_LOT;
 }
 
@@ -267,7 +267,7 @@ export function calculateRTCost(quantity, rtLegs) {
  * Get the total RT legs for a complete round-trip (entry + exit)
  */
 export function getTotalRTLegs(rtLegs) {
-    return rtLegs + 1;
+    return rtLegs * 2;
 }
 
 // Initialize custom structures on load

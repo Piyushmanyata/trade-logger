@@ -9,8 +9,8 @@
  * 
  * RT COST FORMULA:
  * - Entry: rtLegs × quantity × $1.65
- * - Exit: 1 × quantity × $1.65
- * - Total: (rtLegs + 1) × quantity × $1.65
+ * - Exit: rtLegs × quantity × $1.65 (same legs as entry)
+ * - Total: rtLegs × 2 × quantity × $1.65
  */
 
 import {
