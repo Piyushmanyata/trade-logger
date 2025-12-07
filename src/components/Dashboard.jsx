@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Activity, AlertCircle } from 'lucide-react';
+import { Search } from 'lucide-react';
 import StructureCard from './StructureCard';
 import { TICK_VALUE, TICK_SIZE, RT_COST_PER_LOT } from '../utils/fifoCalculator';
 import { calculateSharpeRatio, calculateSortinoRatio } from '../utils/insightsGenerator';

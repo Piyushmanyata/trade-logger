@@ -951,32 +951,36 @@ body::before {
   opacity: 1;
 }
 
-/* P&L based styling (for closed positions) */
-.structure-card.pnl-positive {
+/* P&L based styling (for closed positions only - no open position) */
+.structure-card.pnl-positive:not(.position-long):not(.position-short) {
   border-left: 3px solid var(--pnl-positive);
 }
 
-.structure-card.pnl-negative {
+.structure-card.pnl-negative:not(.position-long):not(.position-short) {
   border-left: 3px solid var(--pnl-negative);
 }
 
-/* Position-based outline for open positions (overrides P&L) */
+/* Position-based outline for open positions (takes priority) */
 .structure-card.position-long {
+  border: 1px solid rgba(68, 138, 255, 0.3);
   border-left: 3px solid var(--position-long);
-  border-color: rgba(68, 138, 255, 0.3);
 }
 
 .structure-card.position-long:hover {
   box-shadow: var(--shadow-lg), var(--shadow-glow-blue);
+  border-color: rgba(68, 138, 255, 0.5);
+  border-left: 3px solid var(--position-long);
 }
 
 .structure-card.position-short {
+  border: 1px solid rgba(255, 145, 0, 0.3);
   border-left: 3px solid var(--position-short);
-  border-color: rgba(255, 145, 0, 0.3);
 }
 
 .structure-card.position-short:hover {
   box-shadow: var(--shadow-lg), var(--shadow-glow-orange);
+  border-color: rgba(255, 145, 0, 0.5);
+  border-left: 3px solid var(--position-short);
 }
 
 .structure-name {
