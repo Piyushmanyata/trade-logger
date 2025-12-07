@@ -55,16 +55,23 @@ export default function Dashboard({ structuresData, onStructureClick }) {
         const totalPnLDollars = structuresData.reduce((sum, s) => sum + (s.realizedPnLDollars || 0), 0);
         const totalGrossDollars = structuresData.reduce((sum, s) => sum + (s.grossPnLDollars || 0), 0);
         const totalRTCost = structuresData.reduce((sum, s) => sum + (s.totalRTCost || 0), 0);
-        const totalRTs = structuresData.reduce((sum, s) => sum + (s.closedQty || 0), 0);
+        const totalRTs = structuresData.reduce((sum, s) => sum + (s.stats?.totalRTs || s.closedQty || 0), 0);
 
         // All matches across all structures
         const allMatches = structuresData.flatMap(s => s.matches || []);
-        const winningTrades = allMatches.filter(m => (m.netPnLDollars || 0) > 0);
-        const losingTrades = allMatches.filter(m => (m.netPnLDollars || 0) < 0);
 
-        // Win rate
-        const winRate = allMatches.length > 0
-            ? (winningTrades.length / allMatches.length) * 100
+        // Classify: Win (gross > 0), Loss (gross < 0), Scratch (gross = 0)
+        const winningTrades = allMatches.filter(m => (m.pnlDollars || 0) > 0);
+        const losingTrades = allMatches.filter(m => (m.pnlDollars || 0) < 0);
+        const scratchTrades = allMatches.filter(m => (m.pnlDollars || 0) === 0);
+
+        // Win rate excludes scratches from denominator
+        const decisiveTrades = winningTrades.length + losingTrades.length;
+        const winRate = decisiveTrades > 0
+            ? (winningTrades.length / decisiveTrades) * 100
+            : 0;
+        const scratchRate = allMatches.length > 0
+            ? (scratchTrades.length / allMatches.length) * 100
             : 0;
 
         // Profit Factor = Total Wins / Total Losses
@@ -88,6 +95,10 @@ export default function Dashboard({ structuresData, onStructureClick }) {
             totalRTs,
             totalTrades: allMatches.length,
             winRate,
+            scratchRate,
+            winningTrades: winningTrades.length,
+            losingTrades: losingTrades.length,
+            scratchTrades: scratchTrades.length,
             profitFactor,
             sharpeRatio,
             sortinoRatio,

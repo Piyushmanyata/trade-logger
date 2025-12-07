@@ -85,26 +85,30 @@ export default function StructureCard({ structure, onClick }) {
 
             <div className="structure-stats">
                 <span>
-                    <span className="label">Avg Buy</span>
-                    <span className="value">{formatPrice(avgBuyPrice)}</span>
-                </span>
-                <span>
-                    <span className="label">Avg Sell</span>
-                    <span className="value">{formatPrice(avgSellPrice)}</span>
-                </span>
-                <span>
-                    <span className="label">Win Rate</span>
+                    <span className="label">Win%</span>
                     <span className="value" style={{ color: (stats?.winRate || 0) >= 50 ? 'var(--pnl-positive)' : (stats?.winRate || 0) > 0 ? 'var(--pnl-negative)' : 'inherit' }}>
                         {stats?.winRate?.toFixed(0) || 0}%
                     </span>
                 </span>
                 <span>
-                    <span className="label">Trades</span>
-                    <span className="value">{stats?.totalTrades || 0}</span>
+                    <span className="label">Scratch%</span>
+                    <span className="value" style={{ color: 'var(--neon-orange)' }}>
+                        {stats?.scratchRate?.toFixed(0) || 0}%
+                    </span>
+                </span>
+                <span>
+                    <span className="label">W/L/S</span>
+                    <span className="value">
+                        <span style={{ color: 'var(--pnl-positive)' }}>{stats?.winningTrades || 0}</span>
+                        /
+                        <span style={{ color: 'var(--pnl-negative)' }}>{stats?.losingTrades || 0}</span>
+                        /
+                        <span style={{ color: 'var(--neon-orange)' }}>{stats?.scratchTrades || 0}</span>
+                    </span>
                 </span>
                 <span>
                     <span className="label">RTs</span>
-                    <span className="value">{structure.closedQty || 0}</span>
+                    <span className="value">{stats?.totalRTs || structure.closedQty || 0}</span>
                 </span>
             </div>
         </div>

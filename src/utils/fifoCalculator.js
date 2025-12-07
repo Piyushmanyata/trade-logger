@@ -299,6 +299,8 @@ export function calculateDailyPnL(matches) {
 
 /**
  * Calculate P&L statistics for a structure
+ * A SCRATCH is a trade where gross P&L = 0 (same entry/exit price)
+ * Scratches are NOT counted as losses, only as cost (RT fees)
  */
 export function calculatePnLStats(matches) {
     if (!matches || matches.length === 0) {
@@ -306,7 +308,9 @@ export function calculatePnLStats(matches) {
             totalTrades: 0,
             winningTrades: 0,
             losingTrades: 0,
+            scratchTrades: 0,
             winRate: 0,
+            scratchRate: 0,
             avgWin: 0,
             avgLoss: 0,
             avgWinDollars: 0,
@@ -316,13 +320,16 @@ export function calculatePnLStats(matches) {
             maxWinDollars: 0,
             maxLossDollars: 0,
             profitFactor: 0,
-            totalVolume: 0
+            totalVolume: 0,
+            totalRTs: 0
         };
     }
 
-    // Use net dollar P&L for win/loss determination
-    const wins = matches.filter(m => (m.netPnLDollars || m.pnl) > 0);
-    const losses = matches.filter(m => (m.netPnLDollars || m.pnl) < 0);
+    // Classify trades: Win (gross > 0), Loss (gross < 0), Scratch (gross = 0)
+    // A scratch has pnlDollars = 0 (same price in and out), but pays RT cost
+    const wins = matches.filter(m => (m.pnlDollars || 0) > 0);
+    const scratches = matches.filter(m => (m.pnlDollars || 0) === 0);
+    const losses = matches.filter(m => (m.pnlDollars || 0) < 0);
 
     const totalWins = wins.reduce((sum, m) => sum + m.pnl, 0);
     const totalLosses = Math.abs(losses.reduce((sum, m) => sum + m.pnl, 0));
@@ -331,12 +338,18 @@ export function calculatePnLStats(matches) {
     const totalLossesDollars = Math.abs(losses.reduce((sum, m) => sum + (m.netPnLDollars || 0), 0));
 
     const totalVolume = matches.reduce((sum, m) => sum + m.matchQty, 0);
+    const totalRTs = matches.reduce((sum, m) => sum + m.matchQty, 0); // Each match = 1 RT per lot
+
+    // Win rate excludes scratches from denominator for fair comparison
+    const decisiveTrades = wins.length + losses.length;
 
     return {
         totalTrades: matches.length,
         winningTrades: wins.length,
         losingTrades: losses.length,
-        winRate: matches.length > 0 ? (wins.length / matches.length) * 100 : 0,
+        scratchTrades: scratches.length,
+        winRate: decisiveTrades > 0 ? (wins.length / decisiveTrades) * 100 : 0,
+        scratchRate: matches.length > 0 ? (scratches.length / matches.length) * 100 : 0,
         avgWin: wins.length > 0 ? totalWins / wins.length : 0,
         avgLoss: losses.length > 0 ? totalLosses / losses.length : 0,
         avgWinDollars: wins.length > 0 ? totalWinsDollars / wins.length : 0,
@@ -346,7 +359,8 @@ export function calculatePnLStats(matches) {
         maxWinDollars: wins.length > 0 ? Math.max(...wins.map(m => m.netPnLDollars || 0)) : 0,
         maxLossDollars: losses.length > 0 ? Math.min(...losses.map(m => m.netPnLDollars || 0)) : 0,
         profitFactor: totalLossesDollars > 0 ? totalWinsDollars / totalLossesDollars : totalWinsDollars > 0 ? Infinity : 0,
-        totalVolume
+        totalVolume,
+        totalRTs
     };
 }
 
