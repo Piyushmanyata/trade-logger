@@ -27,9 +27,12 @@ export default function StructureCard({ structure, onClick }) {
         return '$' + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
 
+    const positionClass = netPosition > 0 ? 'position-long' : netPosition < 0 ? 'position-short' : '';
+    const pnlClass = isProfitable ? 'pnl-positive' : isLoss ? 'pnl-negative' : '';
+
     return (
         <div
-            className={`structure-card ${isProfitable ? 'positive' : ''} ${isLoss ? 'negative' : ''} ${hasOpenPosition ? 'has-open' : ''}`}
+            className={`structure-card ${pnlClass} ${positionClass} ${hasOpenPosition ? 'has-open' : ''}`}
             onClick={() => onClick(structure)}
         >
             <div className="structure-name">

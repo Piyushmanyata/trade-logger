@@ -951,12 +951,32 @@ body::before {
   opacity: 1;
 }
 
-.structure-card.positive {
+/* P&L based styling (for closed positions) */
+.structure-card.pnl-positive {
   border-left: 3px solid var(--pnl-positive);
 }
 
-.structure-card.negative {
+.structure-card.pnl-negative {
   border-left: 3px solid var(--pnl-negative);
+}
+
+/* Position-based outline for open positions (overrides P&L) */
+.structure-card.position-long {
+  border-left: 3px solid var(--position-long);
+  border-color: rgba(68, 138, 255, 0.3);
+}
+
+.structure-card.position-long:hover {
+  box-shadow: var(--shadow-lg), var(--shadow-glow-blue);
+}
+
+.structure-card.position-short {
+  border-left: 3px solid var(--position-short);
+  border-color: rgba(255, 145, 0, 0.3);
+}
+
+.structure-card.position-short:hover {
+  box-shadow: var(--shadow-lg), var(--shadow-glow-orange);
 }
 
 .structure-name {
@@ -2789,12 +2809,23 @@ body::before {
   transform: translateY(-2px);
 }
 
-.direction-card.positive {
-  border-color: rgba(0, 255, 136, 0.3);
+/* Direction-based styling (blue for long, orange for short) */
+.direction-card.direction-long {
+  border-left: 3px solid var(--position-long);
+  border-color: rgba(68, 138, 255, 0.3);
 }
 
-.direction-card.negative {
-  border-color: rgba(255, 0, 68, 0.3);
+.direction-card.direction-long:hover {
+  box-shadow: var(--shadow-glow-blue);
+}
+
+.direction-card.direction-short {
+  border-left: 3px solid var(--position-short);
+  border-color: rgba(255, 145, 0, 0.3);
+}
+
+.direction-card.direction-short:hover {
+  box-shadow: var(--shadow-glow-orange);
 }
 
 .direction-header {
@@ -2804,8 +2835,15 @@ body::before {
   gap: var(--spacing-sm);
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--text-secondary);
   margin-bottom: var(--spacing-sm);
+}
+
+.direction-card.direction-long .direction-header {
+  color: var(--position-long);
+}
+
+.direction-card.direction-short .direction-header {
+  color: var(--position-short);
 }
 
 .direction-pnl {
@@ -2815,11 +2853,11 @@ body::before {
   margin-bottom: var(--spacing-xs);
 }
 
-.direction-card.positive .direction-pnl {
+.direction-pnl.positive {
   color: var(--pnl-positive);
 }
 
-.direction-card.negative .direction-pnl {
+.direction-pnl.negative {
   color: var(--pnl-negative);
 }
 

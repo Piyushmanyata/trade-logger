@@ -341,12 +341,14 @@ export default function Analytics({ structuresData }) {
 
                     <div className="direction-cost-grid">
                         {/* Long Performance */}
-                        <div className={`direction-card ${directionAnalysis.long.totalPnL >= 0 ? 'positive' : 'negative'}`}>
+                        <div className="direction-card direction-long">
                             <div className="direction-header">
                                 <TrendingUp size={18} />
                                 <span>LONG Trades</span>
                             </div>
-                            <div className="direction-pnl">{formatDollars(directionAnalysis.long.totalPnL)}</div>
+                            <div className={`direction-pnl ${directionAnalysis.long.totalPnL >= 0 ? 'positive' : 'negative'}`}>
+                                {formatDollars(directionAnalysis.long.totalPnL)}
+                            </div>
                             <div className="direction-stats">
                                 <span>{directionAnalysis.long.count} trades</span>
                                 <span>{directionAnalysis.long.winRate.toFixed(0)}% win</span>
@@ -354,12 +356,14 @@ export default function Analytics({ structuresData }) {
                         </div>
 
                         {/* Short Performance */}
-                        <div className={`direction-card ${directionAnalysis.short.totalPnL >= 0 ? 'positive' : 'negative'}`}>
+                        <div className="direction-card direction-short">
                             <div className="direction-header">
                                 <TrendingDown size={18} />
                                 <span>SHORT Trades</span>
                             </div>
-                            <div className="direction-pnl">{formatDollars(directionAnalysis.short.totalPnL)}</div>
+                            <div className={`direction-pnl ${directionAnalysis.short.totalPnL >= 0 ? 'positive' : 'negative'}`}>
+                                {formatDollars(directionAnalysis.short.totalPnL)}
+                            </div>
                             <div className="direction-stats">
                                 <span>{directionAnalysis.short.count} trades</span>
                                 <span>{directionAnalysis.short.winRate.toFixed(0)}% win</span>
