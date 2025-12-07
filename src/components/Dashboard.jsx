@@ -255,6 +255,12 @@ export default function Dashboard({ structuresData, onStructureClick }) {
                     <div className="stat-label">Win Rate</div>
                 </div>
                 <div className="stat-card">
+                    <div className="stat-value" style={{ color: 'var(--neon-orange)' }}>
+                        {summaryStats.scratchRate.toFixed(1)}%
+                    </div>
+                    <div className="stat-label">Scratch%</div>
+                </div>
+                <div className="stat-card">
                     <div className={`stat-value ${summaryStats.profitFactor >= 1 ? 'positive' : 'negative'}`}>
                         {formatRatio(summaryStats.profitFactor)}
                     </div>
@@ -271,6 +277,12 @@ export default function Dashboard({ structuresData, onStructureClick }) {
                         {formatRatio(summaryStats.sortinoRatio)}
                     </div>
                     <div className="stat-label">Sortino Ratio</div>
+                </div>
+                <div className="stat-card">
+                    <div className={`stat-value ${(summaryStats.totalPnLDollars / (summaryStats.totalTrades || 1)) >= 0 ? 'positive' : 'negative'}`}>
+                        {formatDollars(summaryStats.totalPnLDollars / (summaryStats.totalTrades || 1))}
+                    </div>
+                    <div className="stat-label">Avg P&L/Trade</div>
                 </div>
             </div>
 
