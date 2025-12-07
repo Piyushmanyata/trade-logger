@@ -92,6 +92,10 @@ export default function Dashboard({ structuresData, onStructureClick }) {
 
         if (filterType === 'open') {
             result = result.filter(s => s.netPosition !== 0);
+        } else if (filterType === 'long') {
+            result = result.filter(s => s.netPosition > 0);
+        } else if (filterType === 'short') {
+            result = result.filter(s => s.netPosition < 0);
         } else if (filterType !== 'all') {
             result = result.filter(s => s.metadata?.type === filterType);
         }
@@ -114,6 +118,22 @@ export default function Dashboard({ structuresData, onStructureClick }) {
                 break;
             case 'position':
                 result.sort((a, b) => Math.abs(b.netPosition || 0) - Math.abs(a.netPosition || 0));
+                break;
+            case 'month':
+                // Sort by month extracted from structure name (e.g., "Sep26", "Dec26")
+                const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                result.sort((a, b) => {
+                    const getMonthYear = (name) => {
+                        const match = name.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)(\d{2})/i);
+                        if (match) {
+                            const monthIdx = monthOrder.findIndex(m => m.toLowerCase() === match[1].toLowerCase());
+                            const year = parseInt(match[2], 10);
+                            return year * 12 + monthIdx;
+                        }
+                        return 999; // Unknown month goes last
+                    };
+                    return getMonthYear(a.name) - getMonthYear(b.name);
+                });
                 break;
             default:
                 break;
@@ -271,7 +291,9 @@ export default function Dashboard({ structuresData, onStructureClick }) {
                     onChange={(e) => setFilterType(e.target.value)}
                 >
                     <option value="all">All Types</option>
-                    <option value="open">⚠️ Open Positions Only</option>
+                    <option value="open">⚠️ Open Positions</option>
+                    <option value="long">▲ Long Positions</option>
+                    <option value="short">▼ Short Positions</option>
                     {structureTypes.map(type => (
                         <option key={type} value={type}>{type}</option>
                     ))}
@@ -284,6 +306,7 @@ export default function Dashboard({ structuresData, onStructureClick }) {
                 >
                     <option value="pnl">Sort: P&L (High to Low)</option>
                     <option value="pnl-asc">Sort: P&L (Low to High)</option>
+                    <option value="month">Sort: Month (Ascending)</option>
                     <option value="position">Sort: Position Size</option>
                     <option value="winrate">Sort: Win Rate</option>
                     <option value="trades">Sort: Trade Count</option>
