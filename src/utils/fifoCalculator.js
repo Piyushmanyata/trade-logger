@@ -379,6 +379,7 @@ export function calculatePnLStats(matches) {
 /**
  * Calculate tick capture distribution for trades
  * Shows what percentage of winning trades captured 1 tick, 2 ticks, etc.
+ * IMPORTANT: Uses GROSS price movement only (entry price vs exit price), not quantity-weighted
  */
 function calculateTickCapture(wins, losses, tickSize) {
     if (wins.length === 0 && losses.length === 0) {
@@ -391,16 +392,37 @@ function calculateTickCapture(wins, losses, tickSize) {
         };
     }
 
-    // Calculate ticks for each winning trade
+    /**
+     * Calculate ticks from price movement only (not quantity-weighted)
+     * - For CLOSE_LONG: ticks = (exitPrice - entryPrice) / tickSize
+     * - For COVER_SHORT: ticks = (entryPrice - exitPrice) / tickSize
+     */
+    const getTicksFromMatch = (match) => {
+        const entryPrice = match.openTrade?.price || 0;
+        const exitPrice = match.closeTrade?.price || 0;
+
+        // For longs: profit when exit > entry, for shorts: profit when entry > exit
+        // The type tells us the direction
+        if (match.type === 'CLOSE_LONG') {
+            return (exitPrice - entryPrice) / tickSize;
+        } else if (match.type === 'COVER_SHORT') {
+            return (entryPrice - exitPrice) / tickSize;
+        }
+        // Fallback: use pnl / matchQty / tickSize (price diff per unit)
+        const matchQty = match.matchQty || 1;
+        return (match.pnl || 0) / matchQty / tickSize;
+    };
+
+    // Calculate ticks for each winning trade (based on price movement only)
     const winTicks = wins.map(m => {
-        const ticks = Math.round(m.pnl / tickSize);
-        return { ticks, pnl: m.pnl, pnlDollars: m.pnlDollars };
+        const ticks = Math.round(getTicksFromMatch(m));
+        return { ticks, grossDollars: m.pnlDollars || 0 };
     });
 
     // Calculate ticks for each losing trade (absolute value)
     const lossTicks = losses.map(m => {
-        const ticks = Math.abs(Math.round(m.pnl / tickSize));
-        return { ticks, pnl: m.pnl, pnlDollars: m.pnlDollars };
+        const ticks = Math.abs(Math.round(getTicksFromMatch(m)));
+        return { ticks, grossDollars: Math.abs(m.pnlDollars || 0) };
     });
 
     // Average ticks won/lost
@@ -414,10 +436,10 @@ function calculateTickCapture(wins, losses, tickSize) {
     for (const w of winTicks) {
         const bucket = w.ticks >= 5 ? '5+' : String(w.ticks);
         if (!winsByTicks[bucket]) {
-            winsByTicks[bucket] = { count: 0, totalPnL: 0 };
+            winsByTicks[bucket] = { count: 0, totalGrossPnL: 0 };
         }
         winsByTicks[bucket].count++;
-        winsByTicks[bucket].totalPnL += w.pnlDollars || 0;
+        winsByTicks[bucket].totalGrossPnL += w.grossDollars;
     }
 
     // Calculate percentages for win distribution
@@ -426,8 +448,8 @@ function calculateTickCapture(wins, losses, tickSize) {
         distribution[ticks] = {
             count: data.count,
             percent: (data.count / wins.length) * 100,
-            totalPnL: data.totalPnL,
-            avgPnL: data.totalPnL / data.count
+            totalGrossPnL: data.totalGrossPnL,
+            avgGrossPnL: data.totalGrossPnL / data.count
         };
     }
 
@@ -436,10 +458,10 @@ function calculateTickCapture(wins, losses, tickSize) {
     for (const l of lossTicks) {
         const bucket = l.ticks >= 5 ? '5+' : String(l.ticks);
         if (!lossesByTicks[bucket]) {
-            lossesByTicks[bucket] = { count: 0, totalPnL: 0 };
+            lossesByTicks[bucket] = { count: 0, totalGrossPnL: 0 };
         }
         lossesByTicks[bucket].count++;
-        lossesByTicks[bucket].totalPnL += Math.abs(l.pnlDollars || 0);
+        lossesByTicks[bucket].totalGrossPnL += l.grossDollars;
     }
 
     return {

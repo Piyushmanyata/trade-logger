@@ -147,7 +147,7 @@ export default function Analytics({ structuresData }) {
         };
     }, [allMatches]);
 
-    // Portfolio Tick Capture Analysis
+    // Portfolio Tick Capture Analysis (uses GROSS price movement only, not quantity)
     const tickCaptureAnalysis = useMemo(() => {
         const wins = allMatches.filter(m => (m.pnlDollars || 0) > 0);
         const losses = allMatches.filter(m => (m.pnlDollars || 0) < 0);
@@ -161,9 +161,28 @@ export default function Analytics({ structuresData }) {
             };
         }
 
-        // Calculate ticks for each trade
-        const winTicks = wins.map(m => Math.round(m.pnl / TICK_SIZE));
-        const lossTicks = losses.map(m => Math.abs(Math.round(m.pnl / TICK_SIZE)));
+        /**
+         * Calculate ticks from pure price movement (not quantity-weighted)
+         * - For CLOSE_LONG: ticks = (exitPrice - entryPrice) / tickSize
+         * - For COVER_SHORT: ticks = (entryPrice - exitPrice) / tickSize
+         */
+        const getTicksFromMatch = (match) => {
+            const entryPrice = match.openTrade?.price || 0;
+            const exitPrice = match.closeTrade?.price || 0;
+
+            if (match.type === 'CLOSE_LONG') {
+                return (exitPrice - entryPrice) / TICK_SIZE;
+            } else if (match.type === 'COVER_SHORT') {
+                return (entryPrice - exitPrice) / TICK_SIZE;
+            }
+            // Fallback: derive from pnl / matchQty
+            const matchQty = match.matchQty || 1;
+            return (match.pnl || 0) / matchQty / TICK_SIZE;
+        };
+
+        // Calculate ticks for each trade (based on price movement only)
+        const winTicks = wins.map(m => Math.round(getTicksFromMatch(m)));
+        const lossTicks = losses.map(m => Math.abs(Math.round(getTicksFromMatch(m))));
 
         const avgTicksWon = winTicks.reduce((s, t) => s + t, 0) / wins.length;
         const avgTicksLost = losses.length > 0 ? lossTicks.reduce((s, t) => s + t, 0) / losses.length : 0;
