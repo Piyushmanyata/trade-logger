@@ -1509,9 +1509,14 @@ body::before {
   background: rgba(255, 136, 0, 0.3);
 }
 
-/* Card with open position - Use multicolor gradient like closed */
-.structure-card.has-open::before {
-  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta), var(--neon-green));
+/* Card with open position - Top bar matches position color */
+.structure-card.position-long::before {
+  background: var(--position-long) !important;
+  opacity: 1;
+}
+
+.structure-card.position-short::before {
+  background: var(--position-short) !important;
   opacity: 1;
 }
 
