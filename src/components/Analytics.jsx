@@ -250,8 +250,7 @@ export default function Analytics({ structuresData }) {
 
     const formatDollars = (value) => {
         if (value === undefined || value === null) return '$0.00';
-        const prefix = value >= 0 ? '+' : '';
-        return prefix + '$' + Math.abs(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return '$' + Math.abs(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
 
     const formatRatio = (value) => {
@@ -342,7 +341,7 @@ export default function Analytics({ structuresData }) {
                         </div>
                         <div className="kpi-card">
                             <div className="kpi-value negative">
-                                -{formatDollars(winLossAnalysis.avgLoss)}
+                                {formatDollars(winLossAnalysis.avgLoss)}
                             </div>
                             <div className="kpi-label">Avg Loss</div>
                         </div>
