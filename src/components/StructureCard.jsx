@@ -44,7 +44,7 @@ export default function StructureCard({ structure, onClick }) {
 
             {/* OPEN POSITION ALERT - Prominent Display */}
             {hasOpenPosition && (
-                <div className="open-position-alert">
+                <div className={`open-position-alert ${netPosition > 0 ? 'alert-long' : 'alert-short'}`}>
                     <span className={netPosition > 0 ? 'long' : 'short'}>
                         {netPosition > 0 ? '▲ LONG' : '▼ SHORT'} {Math.abs(netPosition)} lots
                     </span>
