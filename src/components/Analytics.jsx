@@ -148,6 +148,42 @@ export default function Analytics({ structuresData }) {
         };
     }, [allMatches]);
 
+    // Long vs Short Performance Analysis
+    const directionAnalysis = useMemo(() => {
+        const longs = allMatches.filter(m => m.type === 'CLOSE_LONG');
+        const shorts = allMatches.filter(m => m.type === 'COVER_SHORT');
+
+        const calcStats = (trades) => {
+            const wins = trades.filter(t => (t.netPnLDollars || 0) > 0);
+            const totalPnL = trades.reduce((s, t) => s + (t.netPnLDollars || 0), 0);
+            const winRate = trades.length > 0 ? (wins.length / trades.length) * 100 : 0;
+            return { count: trades.length, wins: wins.length, totalPnL, winRate };
+        };
+
+        return {
+            long: calcStats(longs),
+            short: calcStats(shorts)
+        };
+    }, [allMatches]);
+
+    // RT Cost Analysis
+    const rtCostAnalysis = useMemo(() => {
+        const totalGross = structuresData.reduce((s, str) => s + (str.grossPnLDollars || 0), 0);
+        const totalRT = structuresData.reduce((s, str) => s + (str.totalRTCost || 0), 0);
+        const totalNet = structuresData.reduce((s, str) => s + (str.realizedPnLDollars || 0), 0);
+        const totalLots = allMatches.reduce((s, m) => s + (m.matchQty || 0), 0);
+
+        return {
+            totalGross,
+            totalRT,
+            totalNet,
+            rtPercent: totalGross !== 0 ? (totalRT / Math.abs(totalGross)) * 100 : 0,
+            avgRTPerTrade: allMatches.length > 0 ? totalRT / allMatches.length : 0,
+            totalLots,
+            pnlPerLot: totalLots > 0 ? totalNet / totalLots : 0
+        };
+    }, [structuresData, allMatches]);
+
     // Portfolio Tick Capture Analysis (uses GROSS price movement only, not quantity)
     const tickCaptureAnalysis = useMemo(() => {
         const wins = allMatches.filter(m => (m.pnlDollars || 0) > 0);
@@ -292,6 +328,92 @@ export default function Analytics({ structuresData }) {
                                 -{portfolioStats.rtCostRatio.toFixed(1)}%
                             </div>
                             <div className="kpi-label">RT Cost Drag</div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Long vs Short Performance + Cost Breakdown */}
+                <div className="analytics-section">
+                    <h2 className="section-title">
+                        <Layers size={20} />
+                        Direction & Cost Analysis
+                    </h2>
+
+                    <div className="direction-cost-grid">
+                        {/* Long Performance */}
+                        <div className={`direction-card ${directionAnalysis.long.totalPnL >= 0 ? 'positive' : 'negative'}`}>
+                            <div className="direction-header">
+                                <TrendingUp size={18} />
+                                <span>LONG Trades</span>
+                            </div>
+                            <div className="direction-pnl">{formatDollars(directionAnalysis.long.totalPnL)}</div>
+                            <div className="direction-stats">
+                                <span>{directionAnalysis.long.count} trades</span>
+                                <span>{directionAnalysis.long.winRate.toFixed(0)}% win</span>
+                            </div>
+                        </div>
+
+                        {/* Short Performance */}
+                        <div className={`direction-card ${directionAnalysis.short.totalPnL >= 0 ? 'positive' : 'negative'}`}>
+                            <div className="direction-header">
+                                <TrendingDown size={18} />
+                                <span>SHORT Trades</span>
+                            </div>
+                            <div className="direction-pnl">{formatDollars(directionAnalysis.short.totalPnL)}</div>
+                            <div className="direction-stats">
+                                <span>{directionAnalysis.short.count} trades</span>
+                                <span>{directionAnalysis.short.winRate.toFixed(0)}% win</span>
+                            </div>
+                        </div>
+
+                        {/* Cost Breakdown */}
+                        <div className="cost-breakdown-card">
+                            <div className="cost-header">
+                                <AlertTriangle size={18} />
+                                <span>Cost Analysis</span>
+                            </div>
+                            <div className="cost-stats">
+                                <div className="cost-row">
+                                    <span>Gross P&L</span>
+                                    <span className={rtCostAnalysis.totalGross >= 0 ? 'positive' : 'negative'}>
+                                        {formatDollars(rtCostAnalysis.totalGross)}
+                                    </span>
+                                </div>
+                                <div className="cost-row">
+                                    <span>RT Costs</span>
+                                    <span className="negative">-${rtCostAnalysis.totalRT.toFixed(2)}</span>
+                                </div>
+                                <div className="cost-row highlight">
+                                    <span>Net P&L</span>
+                                    <span className={rtCostAnalysis.totalNet >= 0 ? 'positive' : 'negative'}>
+                                        {formatDollars(rtCostAnalysis.totalNet)}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Efficiency Stats */}
+                        <div className="efficiency-card">
+                            <div className="cost-header">
+                                <Target size={18} />
+                                <span>Efficiency</span>
+                            </div>
+                            <div className="cost-stats">
+                                <div className="cost-row">
+                                    <span>Total Lots</span>
+                                    <span>{rtCostAnalysis.totalLots}</span>
+                                </div>
+                                <div className="cost-row">
+                                    <span>P&L per Lot</span>
+                                    <span className={rtCostAnalysis.pnlPerLot >= 0 ? 'positive' : 'negative'}>
+                                        {formatDollars(rtCostAnalysis.pnlPerLot)}
+                                    </span>
+                                </div>
+                                <div className="cost-row">
+                                    <span>Avg RT/Trade</span>
+                                    <span className="negative">-${rtCostAnalysis.avgRTPerTrade.toFixed(2)}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -2613,3 +2613,129 @@ body::before {
   color: var(--bg-primary);
   font-weight: 600;
 }
+
+/* Direction & Cost Analysis Grid */
+.direction-cost-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md);
+}
+
+.direction-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  text-align: center;
+  transition: var(--transition-normal);
+}
+
+.direction-card:hover {
+  transform: translateY(-2px);
+}
+
+.direction-card.positive {
+  border-color: rgba(0, 255, 136, 0.3);
+}
+
+.direction-card.negative {
+  border-color: rgba(255, 0, 68, 0.3);
+}
+
+.direction-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.direction-pnl {
+  font-size: 1.8rem;
+  font-weight: 700;
+  font-family: 'Fira Code', monospace;
+  margin-bottom: var(--spacing-xs);
+}
+
+.direction-card.positive .direction-pnl {
+  color: var(--pnl-positive);
+}
+
+.direction-card.negative .direction-pnl {
+  color: var(--pnl-negative);
+}
+
+.direction-stats {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-md);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.cost-breakdown-card,
+.efficiency-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+}
+
+.cost-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-sm);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.cost-stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.cost-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 0.8rem;
+}
+
+.cost-row span:first-child {
+  color: var(--text-muted);
+}
+
+.cost-row span:last-child {
+  font-family: 'Fira Code', monospace;
+  font-weight: 600;
+}
+
+.cost-row.highlight {
+  border-top: 1px solid var(--glass-border);
+  margin-top: var(--spacing-xs);
+  padding-top: var(--spacing-sm);
+  font-weight: 600;
+}
+
+.cost-row .positive {
+  color: var(--pnl-positive);
+}
+
+.cost-row .negative {
+  color: var(--pnl-negative);
+}
+
+@media (max-width: 768px) {
+  .direction-cost-grid {
+    grid-template-columns: 1fr;
+  }
+}
