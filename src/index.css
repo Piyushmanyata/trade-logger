@@ -28,6 +28,10 @@
   --pnl-negative: #ff1744;
   --pnl-neutral: #9ca3af;
 
+  /* Position colors - Blue for Long, Orange for Short */
+  --position-long: #448aff;
+  --position-short: #ff9100;
+
   /* Glassmorphism - enhanced */
   --glass-bg: rgba(15, 15, 24, 0.75);
   --glass-bg-light: rgba(30, 30, 48, 0.6);
@@ -42,11 +46,15 @@
   --shadow-glow-cyan: 0 0 30px rgba(0, 229, 255, 0.2);
   --shadow-glow-green: 0 0 30px rgba(0, 255, 136, 0.2);
   --shadow-glow-red: 0 0 30px rgba(255, 23, 68, 0.2);
+  --shadow-glow-blue: 0 0 30px rgba(68, 138, 255, 0.25);
+  --shadow-glow-orange: 0 0 30px rgba(255, 145, 0, 0.25);
 
   /* Glow effects - refined */
   --glow-cyan: 0 0 24px rgba(0, 229, 255, 0.25);
   --glow-magenta: 0 0 24px rgba(224, 64, 251, 0.25);
   --glow-green: 0 0 24px rgba(0, 255, 136, 0.25);
+  --glow-blue: 0 0 24px rgba(68, 138, 255, 0.25);
+  --glow-orange: 0 0 24px rgba(255, 145, 0, 0.25);
 
   /* Spacing - consistent scale */
   --spacing-xs: 4px;
@@ -872,21 +880,27 @@ body::before {
 }
 
 .quick-filter-btn.open.active {
-  background: rgba(255, 170, 0, 0.2);
-  border-color: var(--neon-orange);
-  color: var(--neon-orange);
+  background: rgba(179, 136, 255, 0.15);
+  border-color: var(--neon-purple);
+  color: var(--neon-purple);
 }
 
-.quick-filter-btn.long.active {
+.quick-filter-btn.closed.active {
   background: rgba(0, 255, 136, 0.15);
   border-color: var(--pnl-positive);
   color: var(--pnl-positive);
 }
 
+.quick-filter-btn.long.active {
+  background: rgba(68, 138, 255, 0.15);
+  border-color: var(--neon-blue);
+  color: var(--neon-blue);
+}
+
 .quick-filter-btn.short.active {
-  background: rgba(255, 0, 68, 0.15);
-  border-color: var(--pnl-negative);
-  color: var(--pnl-negative);
+  background: rgba(255, 145, 0, 0.15);
+  border-color: var(--neon-orange);
+  color: var(--neon-orange);
 }
 
 @media (max-width: 768px) {

@@ -92,6 +92,8 @@ export default function Dashboard({ structuresData, onStructureClick }) {
 
         if (filterType === 'open') {
             result = result.filter(s => s.netPosition !== 0);
+        } else if (filterType === 'closed') {
+            result = result.filter(s => s.netPosition === 0);
         } else if (filterType === 'long') {
             result = result.filter(s => s.netPosition > 0);
         } else if (filterType === 'short') {
@@ -268,7 +270,6 @@ export default function Dashboard({ structuresData, onStructureClick }) {
                     />
                 </div>
 
-                {/* Quick Position Filters */}
                 <div className="quick-filter-buttons">
                     <button
                         className={`quick-filter-btn open ${filterType === 'open' ? 'active' : ''}`}
@@ -276,6 +277,20 @@ export default function Dashboard({ structuresData, onStructureClick }) {
                         title="View all open positions"
                     >
                         ⚠️ Open
+                    </button>
+                    <button
+                        className={`quick-filter-btn closed ${filterType === 'closed' ? 'active' : ''}`}
+                        onClick={() => {
+                            if (filterType !== 'closed') {
+                                setFilterType('closed');
+                                setSortBy('month');
+                            } else {
+                                setFilterType('all');
+                            }
+                        }}
+                        title="View closed (flat) positions"
+                    >
+                        ✓ Closed
                     </button>
                     <button
                         className={`quick-filter-btn long ${filterType === 'long' ? 'active' : ''}`}
@@ -295,7 +310,7 @@ export default function Dashboard({ structuresData, onStructureClick }) {
 
                 <select
                     className="filter-select"
-                    value={filterType === 'long' || filterType === 'short' || filterType === 'open' ? 'all' : filterType}
+                    value={['long', 'short', 'open', 'closed'].includes(filterType) ? 'all' : filterType}
                     onChange={(e) => setFilterType(e.target.value)}
                 >
                     <option value="all">All Types</option>
