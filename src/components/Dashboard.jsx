@@ -3,21 +3,78 @@ import { Search, Activity, AlertCircle } from 'lucide-react';
 import StructureCard from './StructureCard';
 import { TICK_VALUE, TICK_SIZE, RT_COST_PER_LOT } from '../utils/fifoCalculator';
 
+/**
+ * Calculate Sharpe Ratio from trade returns
+ * Sharpe = (Average Return - Risk Free Rate) / Std Dev of Returns
+ * We use 0 as risk-free rate for simplicity
+ */
+function calculateSharpeRatio(matches) {
+    if (!matches || matches.length < 2) return 0;
+
+    const returns = matches.map(m => m.netPnLDollars || 0);
+    const avgReturn = returns.reduce((a, b) => a + b, 0) / returns.length;
+
+    const squaredDiffs = returns.map(r => Math.pow(r - avgReturn, 2));
+    const variance = squaredDiffs.reduce((a, b) => a + b, 0) / returns.length;
+    const stdDev = Math.sqrt(variance);
+
+    if (stdDev === 0) return avgReturn > 0 ? Infinity : 0;
+    return avgReturn / stdDev;
+}
+
+/**
+ * Calculate Sortino Ratio (only considers downside deviation)
+ * Sortino = (Average Return - Target) / Downside Deviation
+ * Target = 0 (we want positive returns)
+ */
+function calculateSortinoRatio(matches) {
+    if (!matches || matches.length < 2) return 0;
+
+    const returns = matches.map(m => m.netPnLDollars || 0);
+    const avgReturn = returns.reduce((a, b) => a + b, 0) / returns.length;
+
+    // Only consider negative returns for downside deviation
+    const negativeReturns = returns.filter(r => r < 0);
+    if (negativeReturns.length === 0) return avgReturn > 0 ? Infinity : 0;
+
+    const squaredNegDiffs = negativeReturns.map(r => Math.pow(r, 2));
+    const downsideVariance = squaredNegDiffs.reduce((a, b) => a + b, 0) / returns.length;
+    const downsideDev = Math.sqrt(downsideVariance);
+
+    if (downsideDev === 0) return avgReturn > 0 ? Infinity : 0;
+    return avgReturn / downsideDev;
+}
+
 export default function Dashboard({ structuresData, onStructureClick }) {
     const [search, setSearch] = useState('');
     const [sortBy, setSortBy] = useState('pnl');
     const [filterType, setFilterType] = useState('all');
 
-    // Calculate summary stats
+    // Calculate summary stats with advanced metrics
     const summaryStats = useMemo(() => {
-        const totalPnL = structuresData.reduce((sum, s) => sum + s.realizedPnL, 0);
         const totalPnLDollars = structuresData.reduce((sum, s) => sum + (s.realizedPnLDollars || 0), 0);
         const totalGrossDollars = structuresData.reduce((sum, s) => sum + (s.grossPnLDollars || 0), 0);
         const totalRTCost = structuresData.reduce((sum, s) => sum + (s.totalRTCost || 0), 0);
-        const totalTrades = structuresData.reduce((sum, s) => sum + (s.matches?.length || 0), 0);
-        const totalVolume = structuresData.reduce((sum, s) => sum + (s.closedQty || 0), 0);
-        const winners = structuresData.filter(s => (s.realizedPnLDollars || 0) > 0).length;
-        const losers = structuresData.filter(s => (s.realizedPnLDollars || 0) < 0).length;
+        const totalRTs = structuresData.reduce((sum, s) => sum + (s.closedQty || 0), 0);
+
+        // All matches across all structures
+        const allMatches = structuresData.flatMap(s => s.matches || []);
+        const winningTrades = allMatches.filter(m => (m.netPnLDollars || 0) > 0);
+        const losingTrades = allMatches.filter(m => (m.netPnLDollars || 0) < 0);
+
+        // Win rate
+        const winRate = allMatches.length > 0
+            ? (winningTrades.length / allMatches.length) * 100
+            : 0;
+
+        // Profit Factor = Total Wins / Total Losses
+        const totalWins = winningTrades.reduce((sum, m) => sum + (m.netPnLDollars || 0), 0);
+        const totalLosses = Math.abs(losingTrades.reduce((sum, m) => sum + (m.netPnLDollars || 0), 0));
+        const profitFactor = totalLosses > 0 ? totalWins / totalLosses : (totalWins > 0 ? Infinity : 0);
+
+        // Sharpe and Sortino
+        const sharpeRatio = calculateSharpeRatio(allMatches);
+        const sortinoRatio = calculateSortinoRatio(allMatches);
 
         // Open positions summary
         const structuresWithOpen = structuresData.filter(s => s.netPosition !== 0);
@@ -25,14 +82,17 @@ export default function Dashboard({ structuresData, onStructureClick }) {
         const totalOpenShort = structuresData.reduce((sum, s) => sum + (s.openShortQty || 0), 0);
 
         return {
-            totalPnL,
             totalPnLDollars,
             totalGrossDollars,
             totalRTCost,
-            totalTrades,
-            totalVolume,
-            winners,
-            losers,
+            totalRTs,
+            totalTrades: allMatches.length,
+            winRate,
+            profitFactor,
+            sharpeRatio,
+            sortinoRatio,
+            winningTrades: winningTrades.length,
+            losingTrades: losingTrades.length,
             openPositionsCount: structuresWithOpen.length,
             totalOpenLong,
             totalOpenShort,
@@ -53,20 +113,17 @@ export default function Dashboard({ structuresData, onStructureClick }) {
     const filteredStructures = useMemo(() => {
         let result = [...structuresData];
 
-        // Filter by search
         if (search) {
             const searchLower = search.toLowerCase();
             result = result.filter(s => s.name.toLowerCase().includes(searchLower));
         }
 
-        // Filter by type (including open positions filter)
         if (filterType === 'open') {
             result = result.filter(s => s.netPosition !== 0);
         } else if (filterType !== 'all') {
             result = result.filter(s => s.metadata?.type === filterType);
         }
 
-        // Sort
         switch (sortBy) {
             case 'pnl':
                 result.sort((a, b) => (b.realizedPnLDollars || 0) - (a.realizedPnLDollars || 0));
@@ -99,6 +156,12 @@ export default function Dashboard({ structuresData, onStructureClick }) {
         return prefix + '$' + Math.abs(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
 
+    const formatRatio = (value) => {
+        if (value === Infinity) return '∞';
+        if (value === undefined || value === null || isNaN(value)) return '-';
+        return value.toFixed(2);
+    };
+
     if (structuresData.length === 0) {
         return (
             <div className="empty-state">
@@ -128,7 +191,7 @@ export default function Dashboard({ structuresData, onStructureClick }) {
             }}>
                 <span><strong>Tick Value:</strong> ${TICK_VALUE}</span>
                 <span><strong>Tick Size:</strong> {TICK_SIZE}</span>
-                <span><strong>RT Cost:</strong> ${RT_COST_PER_LOT}/leg (Entry RT + 1 Exit)</span>
+                <span><strong>RT Cost:</strong> ${RT_COST_PER_LOT}/leg × 2 per RT</span>
             </div>
 
             {/* PROMINENT OPEN POSITIONS BANNER */}
@@ -150,7 +213,7 @@ export default function Dashboard({ structuresData, onStructureClick }) {
                 </div>
             )}
 
-            {/* Summary Stats */}
+            {/* Summary Stats - Enhanced Metrics */}
             <div className="summary-stats">
                 <div className="stat-card">
                     <div className={`stat-value ${summaryStats.totalPnLDollars >= 0 ? 'positive' : 'negative'}`}>
@@ -171,20 +234,32 @@ export default function Dashboard({ structuresData, onStructureClick }) {
                     <div className="stat-label">Total RT Costs</div>
                 </div>
                 <div className="stat-card">
-                    <div className="stat-value">{summaryStats.totalTrades}</div>
-                    <div className="stat-label">Closed Trades</div>
+                    <div className="stat-value">{summaryStats.totalRTs}</div>
+                    <div className="stat-label">Total RTs</div>
                 </div>
                 <div className="stat-card">
-                    <div className="stat-value">{summaryStats.totalVolume}</div>
-                    <div className="stat-label">Volume (Lots)</div>
+                    <div className={`stat-value ${summaryStats.winRate >= 50 ? 'positive' : 'negative'}`}>
+                        {summaryStats.winRate.toFixed(1)}%
+                    </div>
+                    <div className="stat-label">Win Rate</div>
                 </div>
                 <div className="stat-card">
-                    <div className="stat-value positive">{summaryStats.winners}</div>
-                    <div className="stat-label">Winning</div>
+                    <div className={`stat-value ${summaryStats.profitFactor >= 1 ? 'positive' : 'negative'}`}>
+                        {formatRatio(summaryStats.profitFactor)}
+                    </div>
+                    <div className="stat-label">Profit Factor</div>
                 </div>
                 <div className="stat-card">
-                    <div className="stat-value negative">{summaryStats.losers}</div>
-                    <div className="stat-label">Losing</div>
+                    <div className={`stat-value ${summaryStats.sharpeRatio >= 0 ? 'positive' : 'negative'}`}>
+                        {formatRatio(summaryStats.sharpeRatio)}
+                    </div>
+                    <div className="stat-label">Sharpe Ratio</div>
+                </div>
+                <div className="stat-card">
+                    <div className={`stat-value ${summaryStats.sortinoRatio >= 0 ? 'positive' : 'negative'}`}>
+                        {formatRatio(summaryStats.sortinoRatio)}
+                    </div>
+                    <div className="stat-label">Sortino Ratio</div>
                 </div>
             </div>
 
