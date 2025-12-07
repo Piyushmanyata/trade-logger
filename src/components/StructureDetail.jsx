@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import {
     X, ArrowRightLeft, Calendar, Clock, Target, BarChart3,
-    History, List, Trash2, TrendingUp, TrendingDown
+    History, List, Trash2, TrendingUp, TrendingDown, Zap
 } from 'lucide-react';
-import { CumulativePnLChart, TradeDistributionChart, EquityCurveChart } from './Charts';
+import { CumulativePnLChart, TickCaptureChart, TradePnLChart } from './Charts';
 import { calculatePerformanceMetrics } from '../utils/insightsGenerator';
 import { TICK_VALUE, TICK_SIZE, RT_COST_PER_LOT } from '../utils/fifoCalculator';
 
@@ -306,12 +306,39 @@ export default function StructureDetail({ structure, onClose, onDeleteTrade }) {
                     {/* Charts Tab */}
                     {activeTab === 'charts' && (
                         <div className="charts-tab">
-                            <CumulativePnLChart matches={matches} title="P&L by Trade" />
+                            {/* Tick Capture Summary */}
+                            {stats?.tickCapture && (
+                                <div className="tick-capture-summary">
+                                    <h3><Zap size={16} /> Tick Capture</h3>
+                                    <div className="tick-capture-stats">
+                                        <div className="tick-stat positive">
+                                            <span className="value">+{stats.tickCapture.avgTicksWon?.toFixed(1) || '0.0'}</span>
+                                            <span className="label">Avg Ticks Won</span>
+                                        </div>
+                                        <div className="tick-stat negative">
+                                            <span className="value">-{stats.tickCapture.avgTicksLost?.toFixed(1) || '0.0'}</span>
+                                            <span className="label">Avg Ticks Lost</span>
+                                        </div>
+                                        <div className="tick-stat ratio">
+                                            <span className="value">
+                                                {stats.tickCapture.avgTicksLost > 0
+                                                    ? (stats.tickCapture.avgTicksWon / stats.tickCapture.avgTicksLost).toFixed(2)
+                                                    : '∞'}
+                                            </span>
+                                            <span className="label">Win/Loss Ratio</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <TickCaptureChart matches={matches} tickSize={TICK_SIZE} />
+
                             <div style={{ marginTop: '24px' }}>
-                                <EquityCurveChart matches={matches} />
+                                <TradePnLChart matches={matches} />
                             </div>
+
                             <div style={{ marginTop: '24px' }}>
-                                <TradeDistributionChart matches={matches} />
+                                <CumulativePnLChart matches={matches} title="P&L by Trade" />
                             </div>
                         </div>
                     )}

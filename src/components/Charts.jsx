@@ -1,7 +1,7 @@
 import React from 'react';
 import {
     LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
-    Tooltip, ResponsiveContainer, ReferenceLine, Legend, ComposedChart, Area
+    Tooltip, ResponsiveContainer, ReferenceLine, Legend, ComposedChart, Area, Cell
 } from 'recharts';
 import { calculateCumulativePnL, calculateDailyPnL } from '../utils/fifoCalculator';
 
@@ -197,41 +197,71 @@ export function MultiStructurePnLChart({ structuresData }) {
 /**
  * Win/Loss distribution chart
  */
-export function TradeDistributionChart({ matches }) {
+/**
+ * Tick Capture Chart - Shows distribution of trades by tick capture
+ * Uses GROSS price movement (entry vs exit), not quantity-weighted
+ */
+export function TickCaptureChart({ matches, tickSize = 0.005 }) {
     if (!matches || matches.length === 0) {
-        return null;
+        return (
+            <div className="chart-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200 }}>
+                <p style={{ color: 'var(--text-muted)' }}>No trades to analyze</p>
+            </div>
+        );
     }
 
-    // Group trades by P&L buckets
-    const buckets = {};
-    const bucketSize = 50; // $50 buckets
+    // Calculate ticks from price movement (not quantity-weighted)
+    const getTicksFromMatch = (match) => {
+        const entryPrice = match.openTrade?.price || 0;
+        const exitPrice = match.closeTrade?.price || 0;
 
-    matches.forEach(m => {
-        const pnl = m.netPnLDollars || 0;
-        const bucket = Math.floor(pnl / bucketSize) * bucketSize;
-        const key = bucket >= 0 ? `$${bucket} to $${bucket + bucketSize}` : `$${bucket} to $${bucket + bucketSize}`;
-        if (!buckets[bucket]) {
-            buckets[bucket] = { bucket, label: key, count: 0, isPositive: bucket >= 0 };
+        if (match.type === 'CLOSE_LONG') {
+            return (exitPrice - entryPrice) / tickSize;
+        } else if (match.type === 'COVER_SHORT') {
+            return (entryPrice - exitPrice) / tickSize;
         }
-        buckets[bucket].count++;
+        const matchQty = match.matchQty || 1;
+        return (match.pnl || 0) / matchQty / tickSize;
+    };
+
+    // Separate wins and losses
+    const wins = matches.filter(m => (m.pnlDollars || 0) > 0);
+    const losses = matches.filter(m => (m.pnlDollars || 0) < 0);
+
+    // Count by tick bucket for wins
+    const winBuckets = { '1': 0, '2': 0, '3': 0, '4': 0, '5+': 0 };
+    wins.forEach(m => {
+        const ticks = Math.round(getTicksFromMatch(m));
+        const bucket = ticks >= 5 ? '5+' : String(Math.max(1, ticks));
+        winBuckets[bucket] = (winBuckets[bucket] || 0) + 1;
     });
 
-    const chartData = Object.values(buckets).sort((a, b) => a.bucket - b.bucket);
+    // Count by tick bucket for losses
+    const lossBuckets = { '1': 0, '2': 0, '3': 0, '4': 0, '5+': 0 };
+    losses.forEach(m => {
+        const ticks = Math.abs(Math.round(getTicksFromMatch(m)));
+        const bucket = ticks >= 5 ? '5+' : String(Math.max(1, ticks));
+        lossBuckets[bucket] = (lossBuckets[bucket] || 0) + 1;
+    });
+
+    const chartData = ['1', '2', '3', '4', '5+'].map(bucket => ({
+        ticks: `${bucket} tick${bucket !== '1' ? 's' : ''}`,
+        wins: winBuckets[bucket] || 0,
+        losses: lossBuckets[bucket] || 0
+    }));
 
     return (
         <div className="chart-container">
-            <h3 style={{ marginBottom: '16px', fontSize: '1rem' }}>Trade Distribution</h3>
-            <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={chartData}>
+            <h3 style={{ marginBottom: '16px', fontSize: '1rem' }}>Tick Capture Distribution</h3>
+            <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={chartData} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                    <XAxis dataKey="label" stroke="var(--text-muted)" fontSize={10} angle={-45} textAnchor="end" height={60} />
-                    <YAxis stroke="var(--text-muted)" fontSize={12} />
+                    <XAxis type="number" stroke="var(--text-muted)" fontSize={12} />
+                    <YAxis dataKey="ticks" type="category" stroke="var(--text-muted)" fontSize={12} width={60} />
                     <Tooltip content={<CustomTooltip />} />
-                    <Bar
-                        dataKey="count"
-                        name="Trades"
-                        fill="var(--neon-cyan)"
-                    />
+                    <Legend />
+                    <Bar dataKey="wins" name="Wins" fill="var(--pnl-positive)" />
+                    <Bar dataKey="losses" name="Losses" fill="var(--pnl-negative)" />
                 </BarChart>
             </ResponsiveContainer>
         </div>
@@ -239,62 +269,48 @@ export function TradeDistributionChart({ matches }) {
 }
 
 /**
- * Equity curve chart
+ * Trade P&L Waterfall - Shows each trade's contribution
  */
-export function EquityCurveChart({ matches, startingBalance = 0 }) {
+export function TradePnLChart({ matches }) {
     if (!matches || matches.length === 0) {
         return null;
     }
 
-    const sorted = [...matches].sort((a, b) => a.closedAt - b.closedAt);
-    let balance = startingBalance;
+    // Take last 20 trades for readability
+    const recentMatches = matches.slice(-20);
 
-    const chartData = sorted.map((m, idx) => {
-        balance += m.netPnLDollars || 0;
-        return {
-            trade: idx + 1,
-            date: m.closeDate?.toLocaleDateString() || '',
-            balance,
-            pnl: m.netPnLDollars || 0
-        };
-    });
-
-    // Add starting point
-    chartData.unshift({ trade: 0, date: 'Start', balance: startingBalance, pnl: 0 });
-
-    const maxBalance = Math.max(...chartData.map(d => d.balance));
-    const minBalance = Math.min(...chartData.map(d => d.balance));
+    const chartData = recentMatches.map((m, idx) => ({
+        trade: `#${matches.length - 20 + idx + 1}`,
+        pnl: m.netPnLDollars || 0,
+        gross: m.pnlDollars || 0,
+        type: m.type === 'CLOSE_LONG' ? 'Long' : 'Short'
+    }));
 
     return (
         <div className="chart-container">
-            <h3 style={{ marginBottom: '16px', fontSize: '1rem' }}>Equity Curve</h3>
-            <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={chartData}>
-                    <defs>
-                        <linearGradient id="equityGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="var(--neon-cyan)" stopOpacity={0.3} />
-                            <stop offset="95%" stopColor="var(--neon-cyan)" stopOpacity={0} />
-                        </linearGradient>
-                    </defs>
+            <h3 style={{ marginBottom: '16px', fontSize: '1rem' }}>Recent Trades P&L (Last 20)</h3>
+            <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                    <XAxis dataKey="trade" stroke="var(--text-muted)" fontSize={12} />
-                    <YAxis
-                        stroke="var(--text-muted)"
-                        fontSize={12}
-                        tickFormatter={(v) => `$${v}`}
-                        domain={[minBalance - 50, maxBalance + 50]}
-                    />
+                    <XAxis dataKey="trade" stroke="var(--text-muted)" fontSize={10} />
+                    <YAxis stroke="var(--text-muted)" fontSize={12} tickFormatter={(v) => `$${v}`} />
                     <Tooltip content={<CustomTooltip />} />
-                    <ReferenceLine y={startingBalance} stroke="var(--text-muted)" strokeDasharray="3 3" />
-                    <Area
-                        type="monotone"
-                        dataKey="balance"
-                        stroke="var(--neon-cyan)"
-                        fill="url(#equityGradient)"
-                        strokeWidth={2}
-                    />
-                </LineChart>
+                    <ReferenceLine y={0} stroke="var(--text-muted)" />
+                    <Bar
+                        dataKey="pnl"
+                        name="Net P&L"
+                        fill="var(--neon-cyan)"
+                    >
+                        {chartData.map((entry, index) => (
+                            <Cell
+                                key={`cell-${index}`}
+                                fill={entry.pnl >= 0 ? 'var(--pnl-positive)' : 'var(--pnl-negative)'}
+                            />
+                        ))}
+                    </Bar>
+                </BarChart>
             </ResponsiveContainer>
         </div>
     );
 }
+
