@@ -470,6 +470,11 @@ export function parseStructureMetadata(structureName) {
         } else {
             metadata.type = 'Calendar';
         }
+    } else if (structureName.startsWith('SA3') || structureName.startsWith('ER3')) {
+        // Outrights (single futures contracts)
+        metadata.type = 'Outright';
+    } else {
+        metadata.type = 'Unknown';
     }
 
     return metadata;
