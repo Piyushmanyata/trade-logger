@@ -2,8 +2,6 @@
  * Generate performance insights for structures (focused on actionable metrics)
  */
 
-import { pricePnLToDollars } from './structureConfig';
-
 /**
  * Calculate trading performance metrics
  */
