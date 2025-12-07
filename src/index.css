@@ -962,25 +962,33 @@ body::before {
 
 /* Position-based outline for open positions (takes priority) */
 .structure-card.position-long {
-  border: 1px solid rgba(68, 138, 255, 0.3);
+  border-top: 1px solid rgba(68, 138, 255, 0.4);
+  border-right: 1px solid rgba(68, 138, 255, 0.4);
+  border-bottom: 1px solid rgba(68, 138, 255, 0.4);
   border-left: 3px solid var(--position-long);
+  box-shadow: var(--shadow-sm), 0 0 15px rgba(68, 138, 255, 0.15);
 }
 
 .structure-card.position-long:hover {
   box-shadow: var(--shadow-lg), var(--shadow-glow-blue);
-  border-color: rgba(68, 138, 255, 0.5);
-  border-left: 3px solid var(--position-long);
+  border-top-color: rgba(68, 138, 255, 0.6);
+  border-right-color: rgba(68, 138, 255, 0.6);
+  border-bottom-color: rgba(68, 138, 255, 0.6);
 }
 
 .structure-card.position-short {
-  border: 1px solid rgba(255, 145, 0, 0.3);
+  border-top: 1px solid rgba(255, 145, 0, 0.4);
+  border-right: 1px solid rgba(255, 145, 0, 0.4);
+  border-bottom: 1px solid rgba(255, 145, 0, 0.4);
   border-left: 3px solid var(--position-short);
+  box-shadow: var(--shadow-sm), 0 0 15px rgba(255, 145, 0, 0.15);
 }
 
 .structure-card.position-short:hover {
   box-shadow: var(--shadow-lg), var(--shadow-glow-orange);
-  border-color: rgba(255, 145, 0, 0.5);
-  border-left: 3px solid var(--position-short);
+  border-top-color: rgba(255, 145, 0, 0.6);
+  border-right-color: rgba(255, 145, 0, 0.6);
+  border-bottom-color: rgba(255, 145, 0, 0.6);
 }
 
 .structure-name {
