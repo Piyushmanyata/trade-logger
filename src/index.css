@@ -2094,3 +2094,225 @@ body::before {
   padding: var(--spacing-xl);
   color: var(--text-muted);
 }
+
+/* ===== Enhanced Analytics ===== */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.kpi-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  text-align: center;
+  transition: all var(--transition-fast);
+}
+
+.kpi-card:hover {
+  border-color: var(--neon-cyan);
+  box-shadow: var(--glow-cyan);
+}
+
+.kpi-card.primary {
+  border-color: var(--neon-cyan);
+  background: rgba(0, 240, 255, 0.05);
+}
+
+.kpi-card.warning {
+  border-color: var(--neon-orange);
+  background: rgba(255, 136, 0, 0.05);
+}
+
+.kpi-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: 'Fira Code', monospace;
+}
+
+.kpi-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Win/Loss Analysis Cards */
+.win-loss-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: var(--spacing-md);
+}
+
+@media (max-width: 900px) {
+  .win-loss-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.wl-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+}
+
+.wl-card.wins {
+  border-left: 3px solid var(--pnl-positive);
+}
+
+.wl-card.losses {
+  border-left: 3px solid var(--pnl-negative);
+}
+
+.wl-card.streak {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-width: 150px;
+}
+
+.wl-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-weight: 600;
+  margin-bottom: var(--spacing-md);
+  color: var(--text-secondary);
+}
+
+.wl-card.wins .wl-header {
+  color: var(--pnl-positive);
+}
+
+.wl-card.losses .wl-header {
+  color: var(--pnl-negative);
+}
+
+.wl-stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.wl-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.wl-stat .label {
+  color: var(--text-muted);
+}
+
+.wl-stat .value {
+  font-weight: 600;
+  font-family: 'Fira Code', monospace;
+}
+
+.streak-display {
+  font-size: 1.2rem;
+  font-weight: 700;
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+}
+
+.streak-display.positive {
+  background: rgba(0, 255, 136, 0.1);
+  color: var(--pnl-positive);
+}
+
+.streak-display.negative {
+  background: rgba(255, 0, 68, 0.1);
+  color: var(--pnl-negative);
+}
+
+/* Day Analysis */
+.day-analysis-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.day-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  text-align: center;
+}
+
+.day-card.best {
+  border-color: var(--pnl-positive);
+  background: rgba(0, 255, 136, 0.05);
+}
+
+.day-card.worst {
+  border-color: var(--pnl-negative);
+  background: rgba(255, 0, 68, 0.05);
+}
+
+.day-card.average {
+  border-color: var(--neon-cyan);
+}
+
+.day-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--spacing-xs);
+}
+
+.day-date {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.day-pnl {
+  font-size: 1.4rem;
+  font-weight: 700;
+  font-family: 'Fira Code', monospace;
+}
+
+.day-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: var(--spacing-xs);
+}
+
+/* Risk Stats */
+.risk-stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.risk-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  padding: var(--spacing-xs) 0;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.risk-stat:last-child {
+  border-bottom: none;
+}
+
+.risk-stat span:first-child {
+  color: var(--text-muted);
+}
+
+.risk-stat span:last-child {
+  font-weight: 600;
+  font-family: 'Fira Code', monospace;
+}

@@ -1,31 +1,188 @@
 import React, { useMemo, useState } from 'react';
-import { BarChart2, Trophy, TrendingUp, TrendingDown, Layers, PieChart } from 'lucide-react';
-import { MultiStructurePnLChart, DailyPnLChart } from './Charts';
+import {
+    BarChart2, Trophy, TrendingUp, TrendingDown, Layers, PieChart,
+    Target, Zap, Calendar, Clock, AlertTriangle
+} from 'lucide-react';
+import { MultiStructurePnLChart, DailyPnLChart, EquityCurveChart } from './Charts';
 import { rankStructures, calculatePortfolioStats, calculateDailySummary } from '../utils/insightsGenerator';
 import { TICK_VALUE, TICK_SIZE, RT_COST_PER_LOT } from '../utils/fifoCalculator';
 
+/**
+ * Calculate Sharpe Ratio
+ */
+function calculateSharpeRatio(returns) {
+    if (!returns || returns.length < 2) return 0;
+    const avgReturn = returns.reduce((a, b) => a + b, 0) / returns.length;
+    const variance = returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length;
+    const stdDev = Math.sqrt(variance);
+    if (stdDev === 0) return avgReturn > 0 ? Infinity : 0;
+    return avgReturn / stdDev;
+}
+
+/**
+ * Calculate Sortino Ratio (only penalizes downside)
+ */
+function calculateSortinoRatio(returns) {
+    if (!returns || returns.length < 2) return 0;
+    const avgReturn = returns.reduce((a, b) => a + b, 0) / returns.length;
+    const negativeReturns = returns.filter(r => r < 0);
+    if (negativeReturns.length === 0) return avgReturn > 0 ? Infinity : 0;
+    const downsideVariance = negativeReturns.reduce((sum, r) => sum + Math.pow(r, 2), 0) / returns.length;
+    const downsideDev = Math.sqrt(downsideVariance);
+    if (downsideDev === 0) return avgReturn > 0 ? Infinity : 0;
+    return avgReturn / downsideDev;
+}
+
+/**
+ * Calculate Maximum Drawdown
+ */
+function calculateMaxDrawdown(dailyPnL) {
+    if (!dailyPnL || dailyPnL.length === 0) return { maxDD: 0, maxDDPercent: 0 };
+
+    let peak = 0;
+    let maxDrawdown = 0;
+    let cumulative = 0;
+
+    for (const day of dailyPnL) {
+        cumulative += day.pnl;
+        if (cumulative > peak) peak = cumulative;
+        const drawdown = peak - cumulative;
+        if (drawdown > maxDrawdown) maxDrawdown = drawdown;
+    }
+
+    const maxDDPercent = peak > 0 ? (maxDrawdown / peak) * 100 : 0;
+    return { maxDD: maxDrawdown, maxDDPercent };
+}
+
+/**
+ * Calculate win/loss streaks
+ */
+function calculateStreaks(matches) {
+    if (!matches || matches.length === 0) return { currentStreak: 0, maxWinStreak: 0, maxLossStreak: 0 };
+
+    let currentStreak = 0;
+    let currentType = null;
+    let maxWinStreak = 0;
+    let maxLossStreak = 0;
+    let winStreak = 0;
+    let lossStreak = 0;
+
+    for (const match of matches) {
+        const isWin = (match.netPnLDollars || 0) > 0;
+
+        if (isWin) {
+            winStreak++;
+            lossStreak = 0;
+            maxWinStreak = Math.max(maxWinStreak, winStreak);
+        } else {
+            lossStreak++;
+            winStreak = 0;
+            maxLossStreak = Math.max(maxLossStreak, lossStreak);
+        }
+    }
+
+    // Current streak
+    const lastIsWin = (matches[matches.length - 1]?.netPnLDollars || 0) > 0;
+    currentStreak = lastIsWin ? winStreak : -lossStreak;
+
+    return { currentStreak, maxWinStreak, maxLossStreak };
+}
+
+/**
+ * Calculate expectancy
+ * Expectancy = (Win% × Avg Win) - (Loss% × Avg Loss)
+ */
+function calculateExpectancy(matches) {
+    if (!matches || matches.length === 0) return 0;
+
+    const wins = matches.filter(m => (m.netPnLDollars || 0) > 0);
+    const losses = matches.filter(m => (m.netPnLDollars || 0) < 0);
+
+    const winRate = wins.length / matches.length;
+    const lossRate = losses.length / matches.length;
+    const avgWin = wins.length > 0 ? wins.reduce((s, m) => s + m.netPnLDollars, 0) / wins.length : 0;
+    const avgLoss = losses.length > 0 ? Math.abs(losses.reduce((s, m) => s + m.netPnLDollars, 0) / losses.length) : 0;
+
+    return (winRate * avgWin) - (lossRate * avgLoss);
+}
+
+/**
+ * Analyze best/worst days
+ */
+function analyzeDays(dailySummary) {
+    if (!dailySummary || dailySummary.length === 0) return { best: null, worst: null, avgDay: 0 };
+
+    const sorted = [...dailySummary].sort((a, b) => b.pnl - a.pnl);
+    const total = dailySummary.reduce((s, d) => s + d.pnl, 0);
+
+    return {
+        best: sorted[0],
+        worst: sorted[sorted.length - 1],
+        avgDay: total / dailySummary.length,
+        profitDays: dailySummary.filter(d => d.pnl > 0).length,
+        lossDays: dailySummary.filter(d => d.pnl < 0).length
+    };
+}
+
 export default function Analytics({ structuresData }) {
-    const [selectedChartType, setSelectedChartType] = useState('cumulative');
+    const [selectedChartType, setSelectedChartType] = useState('equity');
 
-    const portfolioStats = useMemo(() =>
-        calculatePortfolioStats(structuresData),
+    // All matches combined
+    const allMatches = useMemo(() =>
+        structuresData.flatMap(s => s.matches || []).sort((a, b) => (a.exitOrder || 0) - (b.exitOrder || 0)),
         [structuresData]
     );
 
-    const dailySummary = useMemo(() =>
-        calculateDailySummary(structuresData),
-        [structuresData]
-    );
+    const portfolioStats = useMemo(() => calculatePortfolioStats(structuresData), [structuresData]);
+    const dailySummary = useMemo(() => calculateDailySummary(structuresData), [structuresData]);
+    const rankedStructures = useMemo(() => rankStructures(structuresData), [structuresData]);
 
-    const rankedStructures = useMemo(() =>
-        rankStructures(structuresData),
-        [structuresData]
-    );
+    // Advanced metrics
+    const advancedMetrics = useMemo(() => {
+        const returns = allMatches.map(m => m.netPnLDollars || 0);
+        const dailyReturns = dailySummary.map(d => d.pnl);
+
+        return {
+            sharpeRatio: calculateSharpeRatio(returns),
+            sortinoRatio: calculateSortinoRatio(returns),
+            ...calculateMaxDrawdown(dailySummary),
+            ...calculateStreaks(allMatches),
+            expectancy: calculateExpectancy(allMatches),
+            ...analyzeDays(dailySummary)
+        };
+    }, [allMatches, dailySummary]);
+
+    // Win rate breakdown
+    const winLossAnalysis = useMemo(() => {
+        const wins = allMatches.filter(m => (m.netPnLDollars || 0) > 0);
+        const losses = allMatches.filter(m => (m.netPnLDollars || 0) < 0);
+
+        return {
+            winCount: wins.length,
+            lossCount: losses.length,
+            winRate: allMatches.length > 0 ? (wins.length / allMatches.length) * 100 : 0,
+            avgWin: wins.length > 0 ? wins.reduce((s, m) => s + m.netPnLDollars, 0) / wins.length : 0,
+            avgLoss: losses.length > 0 ? Math.abs(losses.reduce((s, m) => s + m.netPnLDollars, 0) / losses.length) : 0,
+            largestWin: wins.length > 0 ? Math.max(...wins.map(m => m.netPnLDollars)) : 0,
+            largestLoss: losses.length > 0 ? Math.min(...losses.map(m => m.netPnLDollars)) : 0,
+            totalWins: wins.reduce((s, m) => s + m.netPnLDollars, 0),
+            totalLosses: Math.abs(losses.reduce((s, m) => s + m.netPnLDollars, 0)),
+            profitFactor: losses.length > 0
+                ? wins.reduce((s, m) => s + m.netPnLDollars, 0) / Math.abs(losses.reduce((s, m) => s + m.netPnLDollars, 0))
+                : wins.length > 0 ? Infinity : 0
+        };
+    }, [allMatches]);
 
     const formatDollars = (value) => {
         if (value === undefined || value === null) return '$0.00';
         const prefix = value >= 0 ? '+' : '';
         return prefix + '$' + Math.abs(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+
+    const formatRatio = (value) => {
+        if (value === Infinity) return '∞';
+        if (value === undefined || value === null || isNaN(value)) return '-';
+        return value.toFixed(2);
     };
 
     if (structuresData.length === 0) {
@@ -41,47 +198,177 @@ export default function Analytics({ structuresData }) {
     return (
         <div className="analytics-container">
             <div className="analytics-main">
-                {/* Portfolio Summary */}
+                {/* Key Performance Indicators */}
                 <div className="analytics-section">
                     <h2 className="section-title">
-                        <PieChart size={20} />
-                        Portfolio Summary
+                        <Target size={20} />
+                        Key Performance Indicators
                     </h2>
 
-                    <div className="portfolio-summary-grid">
-                        <div className="summary-stat primary">
-                            <div className={`value ${portfolioStats.totalPnL >= 0 ? 'positive' : 'negative'}`}>
+                    <div className="kpi-grid">
+                        <div className="kpi-card primary">
+                            <div className={`kpi-value ${portfolioStats.totalPnL >= 0 ? 'positive' : 'negative'}`}>
                                 {formatDollars(portfolioStats.totalPnL)}
                             </div>
-                            <div className="label">Net P&L</div>
+                            <div className="kpi-label">Net P&L</div>
                         </div>
-                        <div className="summary-stat">
-                            <div className="value">{formatDollars(portfolioStats.totalGross)}</div>
-                            <div className="label">Gross P&L</div>
+                        <div className="kpi-card">
+                            <div className={`kpi-value ${winLossAnalysis.winRate >= 50 ? 'positive' : 'negative'}`}>
+                                {winLossAnalysis.winRate.toFixed(1)}%
+                            </div>
+                            <div className="kpi-label">Win Rate ({winLossAnalysis.winCount}W / {winLossAnalysis.lossCount}L)</div>
                         </div>
-                        <div className="summary-stat">
-                            <div className="value negative">-${portfolioStats.totalRT.toFixed(2)}</div>
-                            <div className="label">RT Costs ({portfolioStats.rtCostRatio.toFixed(1)}%)</div>
+                        <div className="kpi-card">
+                            <div className={`kpi-value ${winLossAnalysis.profitFactor >= 1 ? 'positive' : 'negative'}`}>
+                                {formatRatio(winLossAnalysis.profitFactor)}
+                            </div>
+                            <div className="kpi-label">Profit Factor</div>
                         </div>
-                        <div className="summary-stat">
-                            <div className="value">{portfolioStats.overallWinRate.toFixed(1)}%</div>
-                            <div className="label">Win Rate</div>
+                        <div className="kpi-card">
+                            <div className={`kpi-value ${advancedMetrics.expectancy >= 0 ? 'positive' : 'negative'}`}>
+                                {formatDollars(advancedMetrics.expectancy)}
+                            </div>
+                            <div className="kpi-label">Expectancy / Trade</div>
                         </div>
-                        <div className="summary-stat">
-                            <div className="value">{portfolioStats.totalTrades}</div>
-                            <div className="label">Total Trades</div>
+                        <div className="kpi-card">
+                            <div className={`kpi-value ${advancedMetrics.sharpeRatio >= 0.5 ? 'positive' : advancedMetrics.sharpeRatio >= 0 ? '' : 'negative'}`}>
+                                {formatRatio(advancedMetrics.sharpeRatio)}
+                            </div>
+                            <div className="kpi-label">Sharpe Ratio</div>
                         </div>
-                        <div className="summary-stat">
-                            <div className="value">{formatDollars(portfolioStats.pnlPerTrade)}</div>
-                            <div className="label">P&L / Trade</div>
+                        <div className="kpi-card">
+                            <div className={`kpi-value ${advancedMetrics.sortinoRatio >= 1 ? 'positive' : advancedMetrics.sortinoRatio >= 0 ? '' : 'negative'}`}>
+                                {formatRatio(advancedMetrics.sortinoRatio)}
+                            </div>
+                            <div className="kpi-label">Sortino Ratio</div>
                         </div>
-                        <div className="summary-stat">
-                            <div className="value">{formatDollars(portfolioStats.pnlPerLot)}</div>
-                            <div className="label">P&L / Lot</div>
+                        <div className="kpi-card warning">
+                            <div className="kpi-value negative">
+                                -${advancedMetrics.maxDD.toFixed(2)}
+                            </div>
+                            <div className="kpi-label">Max Drawdown</div>
                         </div>
-                        <div className="summary-stat">
-                            <div className="value">{portfolioStats.totalVolume}</div>
-                            <div className="label">Total Volume</div>
+                        <div className="kpi-card">
+                            <div className="kpi-value negative">
+                                -{portfolioStats.rtCostRatio.toFixed(1)}%
+                            </div>
+                            <div className="kpi-label">RT Cost Drag</div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Win/Loss Analysis */}
+                <div className="analytics-section">
+                    <h2 className="section-title">
+                        <Zap size={20} />
+                        Win/Loss Analysis
+                    </h2>
+
+                    <div className="win-loss-grid">
+                        <div className="wl-card wins">
+                            <div className="wl-header">
+                                <TrendingUp size={18} />
+                                <span>Winning Trades</span>
+                            </div>
+                            <div className="wl-stats">
+                                <div className="wl-stat">
+                                    <span className="label">Count</span>
+                                    <span className="value positive">{winLossAnalysis.winCount}</span>
+                                </div>
+                                <div className="wl-stat">
+                                    <span className="label">Total</span>
+                                    <span className="value positive">{formatDollars(winLossAnalysis.totalWins)}</span>
+                                </div>
+                                <div className="wl-stat">
+                                    <span className="label">Average</span>
+                                    <span className="value positive">{formatDollars(winLossAnalysis.avgWin)}</span>
+                                </div>
+                                <div className="wl-stat">
+                                    <span className="label">Largest</span>
+                                    <span className="value positive">{formatDollars(winLossAnalysis.largestWin)}</span>
+                                </div>
+                                <div className="wl-stat">
+                                    <span className="label">Max Streak</span>
+                                    <span className="value positive">{advancedMetrics.maxWinStreak}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="wl-card losses">
+                            <div className="wl-header">
+                                <TrendingDown size={18} />
+                                <span>Losing Trades</span>
+                            </div>
+                            <div className="wl-stats">
+                                <div className="wl-stat">
+                                    <span className="label">Count</span>
+                                    <span className="value negative">{winLossAnalysis.lossCount}</span>
+                                </div>
+                                <div className="wl-stat">
+                                    <span className="label">Total</span>
+                                    <span className="value negative">-${winLossAnalysis.totalLosses.toFixed(2)}</span>
+                                </div>
+                                <div className="wl-stat">
+                                    <span className="label">Average</span>
+                                    <span className="value negative">-${winLossAnalysis.avgLoss.toFixed(2)}</span>
+                                </div>
+                                <div className="wl-stat">
+                                    <span className="label">Largest</span>
+                                    <span className="value negative">{formatDollars(winLossAnalysis.largestLoss)}</span>
+                                </div>
+                                <div className="wl-stat">
+                                    <span className="label">Max Streak</span>
+                                    <span className="value negative">{advancedMetrics.maxLossStreak}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="wl-card streak">
+                            <div className="wl-header">
+                                <Clock size={18} />
+                                <span>Current Streak</span>
+                            </div>
+                            <div className={`streak-display ${advancedMetrics.currentStreak >= 0 ? 'positive' : 'negative'}`}>
+                                {advancedMetrics.currentStreak >= 0
+                                    ? `🔥 ${advancedMetrics.currentStreak} Wins`
+                                    : `❄️ ${Math.abs(advancedMetrics.currentStreak)} Losses`}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Day Analysis */}
+                <div className="analytics-section">
+                    <h2 className="section-title">
+                        <Calendar size={20} />
+                        Day Analysis
+                    </h2>
+
+                    <div className="day-analysis-grid">
+                        {advancedMetrics.best && (
+                            <div className="day-card best">
+                                <div className="day-label">Best Day</div>
+                                <div className="day-date">{advancedMetrics.best.date}</div>
+                                <div className="day-pnl positive">{formatDollars(advancedMetrics.best.pnl)}</div>
+                                <div className="day-meta">{advancedMetrics.best.trades} trades</div>
+                            </div>
+                        )}
+                        {advancedMetrics.worst && (
+                            <div className="day-card worst">
+                                <div className="day-label">Worst Day</div>
+                                <div className="day-date">{advancedMetrics.worst.date}</div>
+                                <div className="day-pnl negative">{formatDollars(advancedMetrics.worst.pnl)}</div>
+                                <div className="day-meta">{advancedMetrics.worst.trades} trades</div>
+                            </div>
+                        )}
+                        <div className="day-card average">
+                            <div className="day-label">Average Day</div>
+                            <div className={`day-pnl ${advancedMetrics.avgDay >= 0 ? 'positive' : 'negative'}`}>
+                                {formatDollars(advancedMetrics.avgDay)}
+                            </div>
+                            <div className="day-meta">
+                                {advancedMetrics.profitDays} green / {advancedMetrics.lossDays} red days
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -115,20 +402,20 @@ export default function Analytics({ structuresData }) {
                     <div className="chart-header">
                         <h2 className="section-title">
                             <TrendingUp size={20} />
-                            P&L Charts
+                            Performance Charts
                         </h2>
                         <div className="chart-type-selector">
                             <button
-                                className={selectedChartType === 'cumulative' ? 'active' : ''}
-                                onClick={() => setSelectedChartType('cumulative')}
+                                className={selectedChartType === 'equity' ? 'active' : ''}
+                                onClick={() => setSelectedChartType('equity')}
                             >
-                                Cumulative
+                                Equity Curve
                             </button>
                             <button
                                 className={selectedChartType === 'daily' ? 'active' : ''}
                                 onClick={() => setSelectedChartType('daily')}
                             >
-                                Daily
+                                Daily P&L
                             </button>
                             <button
                                 className={selectedChartType === 'structures' ? 'active' : ''}
@@ -139,14 +426,12 @@ export default function Analytics({ structuresData }) {
                         </div>
                     </div>
 
-                    {selectedChartType === 'daily' && (
-                        <DailyPnLChart data={dailySummary} />
+                    {selectedChartType === 'equity' && (
+                        <DailyPnLChart data={dailySummary} showCumulative />
                     )}
 
-                    {selectedChartType === 'cumulative' && (
-                        <div className="chart-container">
-                            <DailyPnLChart data={dailySummary} showCumulative />
-                        </div>
+                    {selectedChartType === 'daily' && (
+                        <DailyPnLChart data={dailySummary} />
                     )}
 
                     {selectedChartType === 'structures' && (
@@ -184,6 +469,32 @@ export default function Analytics({ structuresData }) {
                                 </div>
                             </div>
                         ))}
+                    </div>
+                </div>
+
+                {/* Quick Stats */}
+                <div className="analytics-section">
+                    <h3 className="section-title" style={{ fontSize: '0.9rem' }}>
+                        <AlertTriangle size={16} />
+                        Risk Metrics
+                    </h3>
+                    <div className="risk-stats">
+                        <div className="risk-stat">
+                            <span>Max Drawdown</span>
+                            <span className="negative">-${advancedMetrics.maxDD.toFixed(2)}</span>
+                        </div>
+                        <div className="risk-stat">
+                            <span>Avg Win / Avg Loss</span>
+                            <span className={winLossAnalysis.avgWin > winLossAnalysis.avgLoss ? 'positive' : 'negative'}>
+                                {winLossAnalysis.avgLoss > 0 ? (winLossAnalysis.avgWin / winLossAnalysis.avgLoss).toFixed(2) : '∞'}
+                            </span>
+                        </div>
+                        <div className="risk-stat">
+                            <span>Profit Days %</span>
+                            <span className={(advancedMetrics.profitDays / (advancedMetrics.profitDays + advancedMetrics.lossDays || 1)) >= 0.5 ? 'positive' : 'negative'}>
+                                {((advancedMetrics.profitDays / (advancedMetrics.profitDays + advancedMetrics.lossDays || 1)) * 100).toFixed(0)}%
+                            </span>
+                        </div>
                     </div>
                 </div>
 
