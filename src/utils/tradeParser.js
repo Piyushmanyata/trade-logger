@@ -5,21 +5,29 @@
 
 import { getCalendarSpan } from './structureConfig';
 
-// Known structure patterns for intelligent detection
+// Known structure patterns for intelligent detection (order matters - more specific first)
 const STRUCTURE_PATTERNS = [
+    // Calendars
     /SO3\s+\w+\d{2}[-–]\w+\d{2}\s+Calendar/i,
+    // Butterflies
     /SO3\s+\w+\d{2}\s+3mo\s+Butterfly/i,
+    // Condors
     /SO3\s+\w+\d{2}\s+3mo\s+Condor/i,
-    /SON\s+\w+\d{2}\s+D-?Fly/i,
-    /SON\s+\w+\d{2}\s+3\s+D-?Fly/i,
-    /SON\s+\w+\d{2}\s+3\s+Fly/i,
+    // Fly Condors (must come before D-Fly)
     /SON\s+\w+\d{2}\s+Fly\s+Condor/i,
-    /SA3\s+\w+\d{2}/i,
-    /ER3\s+\w+\d{2}/i
+    // 3 D-Flies (must come before D-Fly)
+    /SON\s+\w+\d{2}\s+3\s+D-?Fly/i,
+    // 3 Flies (must come before general Fly)
+    /SON\s+\w+\d{2}\s+3\s+Fly/i,
+    // D-Flies
+    /SON\s+\w+\d{2}\s+D-?[Ff]ly/i,
+    // Outrights - SO3, SA3, ER3 followed by tenor OR just price (SA3 Dec25, SO3 Mar26)
+    /S[OA]3\s+\w+\d{2}(?!\s*[-–]\w+\d{2})/i,
+    /ER3\s+\w+\d{2}/i,
 ];
 
-// Exchange patterns
-const EXCHANGE_PATTERN = /^(ICE[_\-]?[A-Z]*|CME[_\-]?[A-Z]*|NYMEX|COMEX|[A-Z]{2,6}[_\-][A-Z]+)\*?$/i;
+// Exchange patterns - more permissive
+const EXCHANGE_PATTERN = /^(ICE[_\-]?[A-Z]*|CME[_\-]?[A-Z]*|NYMEX|COMEX|ASE|EUREX|[A-Z]{2,6}[_\-][A-Z]+)\*?$/i;
 
 // Date patterns
 const DATE_PATTERNS = [
@@ -72,17 +80,23 @@ function detectFieldType(value) {
         if (pattern.test(trimmed)) return { type: 'structure', value: trimmed };
     }
 
-    // Check for date
+    // Check for date (DD-MM-YY format)
+    if (/^\d{1,2}[-\/.]\d{1,2}[-\/.]\d{2,4}$/.test(trimmed)) {
+        return { type: 'date', value: trimmed };
+    }
     for (const pattern of DATE_PATTERNS) {
         if (pattern.test(trimmed)) return { type: 'date', value: trimmed };
     }
 
-    // Check for time
+    // Check for time (various formats including with milliseconds)
+    if (/^\d{1,2}[.:]?\d{2}[.:]?\d{2}/.test(trimmed)) {
+        return { type: 'time', value: trimmed };
+    }
     for (const pattern of TIME_PATTERNS) {
         if (pattern.test(trimmed)) return { type: 'time', value: trimmed };
     }
 
-    // Could be part of structure name
+    // Could be part of structure name (various prefixes and structure types)
     if (/^(SO3|SON|SA3|ER3|Calendar|Butterfly|Condor|Fly|D-?Fly)/i.test(trimmed)) {
         return { type: 'structure_part', value: trimmed };
     }
@@ -92,15 +106,19 @@ function detectFieldType(value) {
 
 /**
  * Parse date string with multiple format support
+ * Priority: DD-MM-YY (European) > DD-MM-YYYY > ISO > US
  */
 function parseDate(dateStr) {
     if (!dateStr) return null;
+
+    // Clean up the date string
+    const cleaned = dateStr.trim();
 
     const monthNames = ['january', 'february', 'march', 'april', 'may', 'june',
         'july', 'august', 'september', 'october', 'november', 'december'];
 
     // Try "Monday, 16 June, 2025" or "16 June 2025"
-    const match1 = dateStr.match(/(\d{1,2})\s+(\w+),?\s+(\d{4})/);
+    const match1 = cleaned.match(/(\d{1,2})\s+(\w+),?\s+(\d{4})/);
     if (match1) {
         const [, day, month, year] = match1;
         const monthIndex = monthNames.findIndex(m => m.startsWith(month.toLowerCase()));
@@ -109,40 +127,65 @@ function parseDate(dateStr) {
         }
     }
 
-    // Try "2025-06-16"
-    const match2 = dateStr.match(/(\d{4})-(\d{2})-(\d{2})/);
-    if (match2) {
-        const [, year, month, day] = match2;
+    // Try ISO "2025-06-16"
+    const matchISO = cleaned.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (matchISO) {
+        const [, year, month, day] = matchISO;
         return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
     }
 
-    // Try "06/16/2025" or "16/06/2025"
-    const match3 = dateStr.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
-    if (match3) {
-        let [, first, second, third] = match3;
-        // Assume US format MM/DD/YYYY if uncertain
-        return new Date(parseInt(third), parseInt(first) - 1, parseInt(second));
+    // Try DD-MM-YY or DD-MM-YYYY or D-M-YY (European format with dash, slash, or dot)
+    // This is the most common format in the data: 16-6-25, 1-7-25, 23-10-25
+    const matchEuro = cleaned.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})$/);
+    if (matchEuro) {
+        let [, day, month, year] = matchEuro;
+
+        // Parse year: 2-digit years are 2000s (25 -> 2025)
+        let fullYear = parseInt(year);
+        if (fullYear < 100) {
+            fullYear = 2000 + fullYear;
+        }
+
+        // Parse month and day
+        const monthInt = parseInt(month);
+        const dayInt = parseInt(day);
+
+        // European format: DD-MM-YY
+        // Validate: month should be 1-12
+        if (monthInt >= 1 && monthInt <= 12 && dayInt >= 1 && dayInt <= 31) {
+            return new Date(fullYear, monthInt - 1, dayInt);
+        }
     }
 
     // Fallback to Date constructor
-    const parsed = new Date(dateStr);
+    const parsed = new Date(cleaned);
     return isNaN(parsed.getTime()) ? null : parsed;
 }
 
 /**
  * Parse time string and apply to date
+ * Handles: HH.MM.SS, HH:MM:SS, HH:MM:SS.mmm (with milliseconds)
  */
 function parseTime(timeStr, date) {
     if (!timeStr || !date) return date;
 
-    const cleaned = timeStr.replace(/[.:·]/g, ':');
-    const parts = cleaned.split(':');
+    // Clean up: remove trailing spaces, replace various separators with :
+    let cleaned = timeStr.trim();
+
+    // Handle format like "15:11:15.718 " - extract just time part, ignore milliseconds for Date
+    // Remove milliseconds portion after seconds (e.g., .718)
+    cleaned = cleaned.replace(/(\d{2})\.\d+\s*$/, '$1');
+
+    // Replace . with : for dot-separated times like 16.38.25
+    cleaned = cleaned.replace(/[.:·]/g, ':');
+
+    const parts = cleaned.split(':').map(p => parseInt(p) || 0);
 
     if (parts.length >= 2) {
-        date.setHours(parseInt(parts[0]) || 0);
-        date.setMinutes(parseInt(parts[1]) || 0);
+        date.setHours(parts[0]);
+        date.setMinutes(parts[1]);
         if (parts.length >= 3) {
-            date.setSeconds(parseInt(parts[2]) || 0);
+            date.setSeconds(parts[2]);
         }
     }
 
@@ -151,17 +194,20 @@ function parseTime(timeStr, date) {
 
 /**
  * Normalize structure name for consistent grouping
+ * Handles case variations and whitespace issues
  */
 function normalizeStructureName(structure) {
     if (!structure) return '';
     let normalized = structure.trim();
 
-    // Normalize D-Fly/D-fly/D Fly variations
+    // Normalize D-Fly/D-fly/D Fly/d-fly variations
     normalized = normalized.replace(/D[-\s]?[Ff]ly/gi, 'D-Fly');
 
-    // Normalize 3 Fly/3-Fly/3 D-Fly variations  
+    // Normalize 3 D-Fly/3D-Fly/3 D Fly variations (must come before 3 Fly)
     normalized = normalized.replace(/3\s*D[-\s]?[Ff]ly/gi, '3 D-Fly');
-    normalized = normalized.replace(/3\s+[Ff]ly(?!\s*Condor)/gi, '3 Fly');
+
+    // Normalize 3 Fly/3-Fly/3Fly (but not "3 D-Fly" or followed by Condor)
+    normalized = normalized.replace(/3\s+[Ff]ly(?!\s*Condor)(?!\s*D)/gi, '3 Fly');
 
     // Normalize Fly Condor
     normalized = normalized.replace(/[Ff]ly\s*[Cc]ondor/gi, 'Fly Condor');
@@ -169,10 +215,19 @@ function normalizeStructureName(structure) {
     // Normalize 3mo Butterfly
     normalized = normalized.replace(/3mo\s*[Bb]utterfly/gi, '3mo Butterfly');
 
+    // Normalize 3mo Condor
+    normalized = normalized.replace(/3mo\s*[Cc]ondor/gi, '3mo Condor');
+
     // Normalize Calendar
     normalized = normalized.replace(/[Cc]alendar/g, 'Calendar');
 
-    // Normalize dash between tenors
+    // Normalize Butterfly (standalone)
+    normalized = normalized.replace(/[Bb]utterfly/g, 'Butterfly');
+
+    // Normalize Condor (standalone)
+    normalized = normalized.replace(/[Cc]ondor/g, 'Condor');
+
+    // Normalize dash between tenors (Mar26-Jun26, etc.)
     normalized = normalized.replace(/(\w{3}\d{2})\s*[–—-]\s*(\w{3}\d{2})/g, '$1-$2');
 
     return normalized;
