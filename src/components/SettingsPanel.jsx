@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Plus, Trash2, Save, X } from 'lucide-react';
+import { Settings as SettingsIcon, Plus, Trash2, Save, X, RefreshCw } from 'lucide-react';
 import {
     STRUCTURE_RT_LEGS,
     getCustomStructures,
@@ -7,30 +7,48 @@ import {
     removeCustomStructure,
     TICK_VALUE,
     TICK_SIZE,
-    RT_COST_PER_LOT
+    RT_COST_PER_LOT,
+    updateTradingConstants,
+    getTradingConfig
 } from '../utils/structureConfig';
+import { saveSettings, loadSettings } from '../utils/storage';
 
-export default function SettingsPanel({ onClose }) {
+export default function SettingsPanel({ onClose, existingTrades = [] }) {
     const [customStructures, setCustomStructures] = useState({});
     const [newStructure, setNewStructure] = useState({ name: '', rtLegs: 1, type: 'Calendar' });
     const [showAddForm, setShowAddForm] = useState(false);
 
-    // Structure types for dropdown
+    // Editable trading constants
+    const [tradingConfig, setTradingConfig] = useState({
+        tickValue: TICK_VALUE,
+        tickSize: TICK_SIZE,
+        rtCostPerLot: RT_COST_PER_LOT
+    });
+    const [configChanged, setConfigChanged] = useState(false);
+
+    // Structure types for dropdown with RT leg defaults
     const structureTypes = [
-        'Calendar',
-        '3 Fly',
-        'D-Fly',
-        '3 D-Fly',
-        'Fly Condor',
-        '3mo Butterfly',
-        '3mo Condor',
-        'Outright',
-        'Custom'
+        { name: 'Calendar', rtLegs: 1, description: '1 spread leg' },
+        { name: '3 Fly', rtLegs: 2, description: '2 spread legs' },
+        { name: 'D-Fly', rtLegs: 4, description: '4 spread legs' },
+        { name: '3 D-Fly', rtLegs: 4, description: '4 spread legs' },
+        { name: 'Fly Condor', rtLegs: 3, description: '3 spread legs' },
+        { name: '3mo Butterfly', rtLegs: 2, description: '2 spread legs' },
+        { name: '3mo Condor', rtLegs: 2, description: '2 spread legs' },
+        { name: 'Outright', rtLegs: 0.5, description: '0.5 legs (single)' },
+        { name: 'Custom', rtLegs: 1, description: 'Define your own' }
     ];
 
-    // Load custom structures on mount
+    // Get unique structures from existing trades
+    const uniqueStructuresFromTrades = [...new Set(existingTrades.map(t => t.structure))].sort();
+
+    // Load custom structures and settings on mount
     useEffect(() => {
         setCustomStructures(getCustomStructures());
+        const savedSettings = loadSettings();
+        if (savedSettings?.tradingConfig) {
+            setTradingConfig(savedSettings.tradingConfig);
+        }
     }, []);
 
     const handleAddStructure = () => {
@@ -49,13 +67,44 @@ export default function SettingsPanel({ onClose }) {
         }
     };
 
+    const handleTypeChange = (typeName) => {
+        const typeConfig = structureTypes.find(t => t.name === typeName);
+        setNewStructure(prev => ({
+            ...prev,
+            type: typeName,
+            rtLegs: typeConfig?.rtLegs || 1
+        }));
+    };
+
+    const handleConfigChange = (field, value) => {
+        const numValue = parseFloat(value);
+        if (!isNaN(numValue) && numValue >= 0) {
+            setTradingConfig(prev => ({ ...prev, [field]: numValue }));
+            setConfigChanged(true);
+        }
+    };
+
+    const handleSaveConfig = () => {
+        // Update in-memory config
+        updateTradingConstants(tradingConfig.tickValue, tradingConfig.tickSize, tradingConfig.rtCostPerLot);
+        // Save to localStorage
+        saveSettings({ tradingConfig });
+        setConfigChanged(false);
+        alert('Trading constants saved! Refresh the app for full effect.');
+    };
+
+    const handleResetConfig = () => {
+        setTradingConfig({ tickValue: 16.5, tickSize: 0.005, rtCostPerLot: 1.65 });
+        setConfigChanged(true);
+    };
+
     return (
         <div className="settings-overlay" onClick={onClose}>
             <div className="settings-panel" onClick={e => e.stopPropagation()}>
                 <div className="settings-header">
                     <h2>
                         <SettingsIcon size={24} />
-                        Settings & Structure Management
+                        Settings & Configuration
                     </h2>
                     <button className="close-btn" onClick={onClose}>
                         <X size={20} />
@@ -63,23 +112,59 @@ export default function SettingsPanel({ onClose }) {
                 </div>
 
                 <div className="settings-content">
-                    {/* Trading Constants */}
+                    {/* Trading Constants - EDITABLE */}
                     <section className="settings-section">
                         <h3>Trading Constants</h3>
-                        <div className="constants-grid">
+                        <p className="section-description">
+                            Configure trading parameters for P&L calculations
+                        </p>
+                        <div className="constants-grid editable">
                             <div className="constant-item">
-                                <span className="label">Tick Value</span>
-                                <span className="value">${TICK_VALUE}</span>
+                                <label>Tick Value ($)</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={tradingConfig.tickValue}
+                                    onChange={e => handleConfigChange('tickValue', e.target.value)}
+                                />
+                                <span className="hint">Dollar value per tick movement</span>
                             </div>
                             <div className="constant-item">
-                                <span className="label">Tick Size</span>
-                                <span className="value">{TICK_SIZE}</span>
+                                <label>Tick Size</label>
+                                <input
+                                    type="number"
+                                    step="0.0001"
+                                    min="0"
+                                    value={tradingConfig.tickSize}
+                                    onChange={e => handleConfigChange('tickSize', e.target.value)}
+                                />
+                                <span className="hint">Price units per tick (0.005 = half cent)</span>
                             </div>
                             <div className="constant-item">
-                                <span className="label">RT Cost per Leg</span>
-                                <span className="value">${RT_COST_PER_LOT}</span>
+                                <label>RT Cost per Leg ($)</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={tradingConfig.rtCostPerLot}
+                                    onChange={e => handleConfigChange('rtCostPerLot', e.target.value)}
+                                />
+                                <span className="hint">Commission per leg per lot</span>
                             </div>
                         </div>
+                        {configChanged && (
+                            <div className="config-actions">
+                                <button className="save-btn" onClick={handleSaveConfig}>
+                                    <Save size={16} />
+                                    Save Changes
+                                </button>
+                                <button className="reset-btn" onClick={handleResetConfig}>
+                                    <RefreshCw size={16} />
+                                    Reset to Defaults
+                                </button>
+                            </div>
+                        )}
                     </section>
 
                     {/* Add New Structure */}
@@ -110,6 +195,19 @@ export default function SettingsPanel({ onClose }) {
                                         />
                                     </div>
                                     <div className="form-group">
+                                        <label>Type (Auto-sets RT legs)</label>
+                                        <select
+                                            value={newStructure.type}
+                                            onChange={e => handleTypeChange(e.target.value)}
+                                        >
+                                            {structureTypes.map(type => (
+                                                <option key={type.name} value={type.name}>
+                                                    {type.name} ({type.rtLegs} legs)
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="form-group">
                                         <label>RT Legs (Entry)</label>
                                         <input
                                             type="number"
@@ -118,17 +216,6 @@ export default function SettingsPanel({ onClose }) {
                                             value={newStructure.rtLegs}
                                             onChange={e => setNewStructure({ ...newStructure, rtLegs: parseFloat(e.target.value) || 1 })}
                                         />
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Type</label>
-                                        <select
-                                            value={newStructure.type}
-                                            onChange={e => setNewStructure({ ...newStructure, type: e.target.value })}
-                                        >
-                                            {structureTypes.map(type => (
-                                                <option key={type} value={type}>{type}</option>
-                                            ))}
-                                        </select>
                                     </div>
                                 </div>
                                 <div className="form-actions">
@@ -141,9 +228,7 @@ export default function SettingsPanel({ onClose }) {
                                     </button>
                                 </div>
                                 <div className="form-hint">
-                                    <strong>RT Legs:</strong> Entry legs for this structure. Exit uses same legs.
-                                    <br />
-                                    Total RT cost = rtLegs × 2 × quantity × ${RT_COST_PER_LOT}
+                                    <strong>RT Cost Formula:</strong> Entry Legs × 2 × Quantity × ${tradingConfig.rtCostPerLot}
                                 </div>
                             </div>
                         )}
@@ -171,27 +256,47 @@ export default function SettingsPanel({ onClose }) {
                         )}
                     </section>
 
+                    {/* Structures from Trades */}
+                    {uniqueStructuresFromTrades.length > 0 && (
+                        <section className="settings-section">
+                            <h3>Structures in Your Trades ({uniqueStructuresFromTrades.length})</h3>
+                            <div className="structures-from-trades">
+                                {uniqueStructuresFromTrades.slice(0, 20).map(structure => (
+                                    <span key={structure} className="structure-tag">
+                                        {structure}
+                                    </span>
+                                ))}
+                                {uniqueStructuresFromTrades.length > 20 && (
+                                    <span className="structure-tag more">
+                                        +{uniqueStructuresFromTrades.length - 20} more
+                                    </span>
+                                )}
+                            </div>
+                        </section>
+                    )}
+
                     {/* Built-in Structures Reference */}
                     <section className="settings-section">
-                        <h3>Built-in Structures (Reference)</h3>
+                        <h3>Built-in Structure Types</h3>
                         <div className="builtin-structures">
                             <table>
                                 <thead>
                                     <tr>
                                         <th>Type</th>
                                         <th>Entry Legs</th>
-                                        <th>Total (Entry + Exit)</th>
+                                        <th>Total RT Legs</th>
+                                        <th>Cost per Lot</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr><td>Calendar</td><td>1</td><td>2</td></tr>
-                                    <tr><td>3 Fly</td><td>2</td><td>4</td></tr>
-                                    <tr><td>3mo Butterfly</td><td>2</td><td>4</td></tr>
-                                    <tr><td>3mo Condor</td><td>2</td><td>4</td></tr>
-                                    <tr><td>Fly Condor</td><td>3</td><td>6</td></tr>
-                                    <tr><td>D-Fly</td><td>4</td><td>8</td></tr>
-                                    <tr><td>3 D-Fly</td><td>4</td><td>8</td></tr>
-                                    <tr><td>Outright</td><td>0.5</td><td>1</td></tr>
+                                    {structureTypes.filter(t => t.name !== 'Custom').map(type => (
+                                        <tr key={type.name}>
+                                            <td>{type.name}</td>
+                                            <td>{type.rtLegs}</td>
+                                            <td>{type.rtLegs * 2}</td>
+                                            <td>${(type.rtLegs * 2 * tradingConfig.rtCostPerLot).toFixed(2)}</td>
+                                        </tr>
+                                    ))}
                                 </tbody>
                             </table>
                         </div>

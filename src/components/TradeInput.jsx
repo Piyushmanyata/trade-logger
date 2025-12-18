@@ -326,6 +326,23 @@ Supports tabs, multiple spaces, or comma-separated values."
                             </div>
                         </div>
 
+                        {/* Exchange - IMPROVED */}
+                        <div className="form-group exchange-group">
+                            <label>Exchange</label>
+                            <select
+                                value={manualForm.exchange}
+                                onChange={(e) => updateManualField('exchange', e.target.value)}
+                            >
+                                <option value="ICE_L">ICE_L</option>
+                                <option value="ASE">ASE</option>
+                                <option value="EUREX">EUREX</option>
+                                <option value="CME">CME</option>
+                                <option value="NYMEX">NYMEX</option>
+                                <option value="COMEX">COMEX</option>
+                                <option value="MANUAL">Manual</option>
+                            </select>
+                        </div>
+
                         {/* Side */}
                         <div className="form-group side-group">
                             <label>Side *</label>
@@ -347,27 +364,34 @@ Supports tabs, multiple spaces, or comma-separated values."
                             </div>
                         </div>
 
-                        {/* Quantity */}
+                        {/* Quantity - IMPROVED */}
                         <div className="form-group qty-group">
                             <label>Qty *</label>
                             <input
                                 type="number"
                                 min="1"
+                                max="1000"
+                                step="1"
                                 value={manualForm.quantity}
                                 onChange={(e) => updateManualField('quantity', e.target.value)}
+                                onBlur={(e) => {
+                                    // Ensure valid quantity
+                                    const val = parseInt(e.target.value) || 1;
+                                    updateManualField('quantity', Math.max(1, Math.min(1000, val)).toString());
+                                }}
                                 required
                             />
                         </div>
 
-                        {/* Price */}
+                        {/* Price - IMPROVED */}
                         <div className="form-group price-group">
                             <label>Price</label>
                             <input
                                 type="number"
-                                step="0.001"
+                                step="0.0001"
                                 value={manualForm.price}
                                 onChange={(e) => updateManualField('price', e.target.value)}
-                                placeholder="-0.025"
+                                placeholder="e.g., -0.025 or 96.45"
                             />
                         </div>
 
@@ -386,23 +410,10 @@ Supports tabs, multiple spaces, or comma-separated values."
                             <label>Time</label>
                             <input
                                 type="time"
+                                step="1"
                                 value={manualForm.time}
                                 onChange={(e) => updateManualField('time', e.target.value)}
                             />
-                        </div>
-
-                        {/* Exchange */}
-                        <div className="form-group exchange-group">
-                            <label>Exchange</label>
-                            <select
-                                value={manualForm.exchange}
-                                onChange={(e) => updateManualField('exchange', e.target.value)}
-                            >
-                                <option value="ICE_L">ICE_L</option>
-                                <option value="CME">CME</option>
-                                <option value="NYMEX">NYMEX</option>
-                                <option value="MANUAL">Manual</option>
-                            </select>
                         </div>
 
                         {/* Add Button - INLINE */}

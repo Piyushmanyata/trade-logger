@@ -167,7 +167,7 @@ function App() {
       )}
 
       {showSettings && (
-        <SettingsPanel onClose={() => setShowSettings(false)} />
+        <SettingsPanel onClose={() => setShowSettings(false)} existingTrades={trades} />
       )}
     </div>
   );
