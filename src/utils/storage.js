@@ -7,12 +7,18 @@ const SETTINGS_KEY = 'tradeLogger_settings';
 
 /**
  * Save trades to localStorage
+ * Clears storage when given empty array
  */
 export function saveTrades(trades) {
     try {
+        if (!trades || trades.length === 0) {
+            localStorage.removeItem(STORAGE_KEY);
+            return true;
+        }
         const serialized = JSON.stringify(trades.map(t => ({
             ...t,
-            date: t.date.toISOString()
+            // Defensive: handle case where date might be invalid
+            date: t.date?.toISOString?.() || new Date().toISOString()
         })));
         localStorage.setItem(STORAGE_KEY, serialized);
         return true;

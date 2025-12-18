@@ -8,18 +8,39 @@
  * - Total per round-trip: rtLegs × 2 × quantity × $1.65
  */
 
-// Trading constants (can be customized via settings)
-export let TICK_VALUE = 16.5; // $16.5 per tick
-export let TICK_SIZE = 0.005; // 0.005 price units per tick
-export let RT_COST_PER_LOT = 1.65; // $1.65 per leg per lot
+// Trading constants configuration object (mutable via updateTradingConstants)
+const tradingConfig = {
+    TICK_VALUE: 16.5,    // $16.5 per tick
+    TICK_SIZE: 0.005,    // 0.005 price units per tick
+    RT_COST_PER_LOT: 1.65 // $1.65 per leg per lot
+};
+
+// Export getters for trading constants
+export const TICK_VALUE = tradingConfig.TICK_VALUE;
+export const TICK_SIZE = tradingConfig.TICK_SIZE;
+export const RT_COST_PER_LOT = tradingConfig.RT_COST_PER_LOT;
+
+// Get current config values (for dynamic access after updates)
+export function getTradingConfig() {
+    return { ...tradingConfig };
+}
 
 /**
  * Update trading constants
+ * Note: This updates the internal config object. Modules that cached
+ * the exported constants at import time will need to use getTradingConfig()
+ * to get updated values.
  */
 export function updateTradingConstants(tickValue, tickSize, rtCost) {
-    if (tickValue !== undefined) TICK_VALUE = tickValue;
-    if (tickSize !== undefined) TICK_SIZE = tickSize;
-    if (rtCost !== undefined) RT_COST_PER_LOT = rtCost;
+    if (tickValue !== undefined && typeof tickValue === 'number' && tickValue > 0) {
+        tradingConfig.TICK_VALUE = tickValue;
+    }
+    if (tickSize !== undefined && typeof tickSize === 'number' && tickSize > 0) {
+        tradingConfig.TICK_SIZE = tickSize;
+    }
+    if (rtCost !== undefined && typeof rtCost === 'number' && rtCost >= 0) {
+        tradingConfig.RT_COST_PER_LOT = rtCost;
+    }
 }
 
 /**

@@ -26,9 +26,8 @@ function App() {
 
   // Save trades to storage when they change
   useEffect(() => {
-    if (trades.length > 0) {
-      saveTrades(trades);
-    }
+    // Always save - saveTrades handles empty arrays by clearing storage
+    saveTrades(trades);
   }, [trades]);
 
   // Process structures with P&L calculations
@@ -74,20 +73,12 @@ function App() {
   const handleDeleteTrade = (tradeId) => {
     const updated = trades.filter(t => t.id !== tradeId);
     setTrades(updated);
-
-    // Update localStorage
-    if (updated.length > 0) {
-      saveTrades(updated);
-    } else {
-      clearTrades();
-    }
+    // Note: useEffect will handle saving to localStorage
 
     // Refresh selected structure if it still exists
     if (selectedStructure) {
       const updatedStructure = structuresData.find(s => s.name === selectedStructure.name);
-      if (updatedStructure && updatedStructure.trades.length > 0) {
-        // Will be updated on next render
-      } else {
+      if (!updatedStructure || updatedStructure.trades.length === 0) {
         setSelectedStructure(null);
       }
     }
