@@ -15,7 +15,12 @@ const tradingConfig = {
     RT_COST_PER_LOT: 1.65 // $1.65 per leg per lot
 };
 
-// Export getters for trading constants
+// Export dynamic getters for trading constants (always returns current config values)
+export const getTICK_VALUE = () => tradingConfig.TICK_VALUE;
+export const getTICK_SIZE = () => tradingConfig.TICK_SIZE;
+export const getRT_COST_PER_LOT = () => tradingConfig.RT_COST_PER_LOT;
+
+// Legacy exports for backward compatibility - DEPRECATED, use getTradingConfig() or getter functions
 export const TICK_VALUE = tradingConfig.TICK_VALUE;
 export const TICK_SIZE = tradingConfig.TICK_SIZE;
 export const RT_COST_PER_LOT = tradingConfig.RT_COST_PER_LOT;
@@ -257,17 +262,19 @@ export function getStructureRTLegs(structureName) {
 
 /**
  * Calculate the number of ticks from a price difference
+ * Uses dynamic config value to ensure updates are reflected
  */
 export function priceToTicks(priceDiff) {
-    return priceDiff / TICK_SIZE;
+    return priceDiff / tradingConfig.TICK_SIZE;
 }
 
 /**
  * Convert price P&L to dollar P&L
+ * Uses dynamic config values to ensure updates are reflected
  */
 export function pricePnLToDollars(pricePnL) {
     const ticks = priceToTicks(pricePnL);
-    return ticks * TICK_VALUE;
+    return ticks * tradingConfig.TICK_VALUE;
 }
 
 /**
@@ -281,7 +288,7 @@ export function pricePnLToDollars(pricePnL) {
 export function calculateRTCost(quantity, rtLegs) {
     // Entry RT + Exit RT (same legs for both)
     const totalLegs = rtLegs * 2;
-    return quantity * totalLegs * RT_COST_PER_LOT;
+    return quantity * totalLegs * tradingConfig.RT_COST_PER_LOT;
 }
 
 /**

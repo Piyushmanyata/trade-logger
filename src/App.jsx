@@ -51,17 +51,17 @@ function App() {
   const handleTradesAdded = (newTrades) => {
     const tradesArray = Array.isArray(newTrades) ? newTrades : [newTrades];
 
-    // Merge with existing, avoiding exact duplicates
-    const existingIds = new Set(trades.map(t => t.id));
-    const uniqueNew = tradesArray.filter(t => !existingIds.has(t.id));
+    // Merge with existing, avoiding exact duplicates and logical duplicates in single pass
+    // Create combined lookup set for both ID and logical key
+    const existingLookup = new Set([
+      ...trades.map(t => t.id),
+      ...trades.map(t => `${t.timestamp}-${t.structure}-${t.side}-${t.quantity}-${t.price}`)
+    ]);
 
-    // Also check for logical duplicates
-    const existingKeys = new Set(trades.map(t =>
-      `${t.timestamp}-${t.structure}-${t.side}-${t.quantity}-${t.price}`
-    ));
-    const trulyNew = uniqueNew.filter(t =>
-      !existingKeys.has(`${t.timestamp}-${t.structure}-${t.side}-${t.quantity}-${t.price}`)
-    );
+    const trulyNew = tradesArray.filter(t => {
+      const logicalKey = `${t.timestamp}-${t.structure}-${t.side}-${t.quantity}-${t.price}`;
+      return !existingLookup.has(t.id) && !existingLookup.has(logicalKey);
+    });
 
     if (trulyNew.length > 0) {
       // Don't sort by timestamp - keep in entry order

@@ -146,7 +146,7 @@ export default function Dashboard({ structuresData, onStructureClick }) {
 
     const formatDollars = (value) => {
         if (value === undefined || value === null) return '$0.00';
-        const prefix = value >= 0 ? '+' : '';
+        const prefix = value > 0 ? '+' : '';
         return prefix + '$' + Math.abs(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
 

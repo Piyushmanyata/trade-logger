@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Plus, Trash2, Save, X, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Settings as SettingsIcon, Plus, Trash2, Save, X, RefreshCw, Check } from 'lucide-react';
 import {
     STRUCTURE_RT_LEGS,
     getCustomStructures,
@@ -25,6 +25,7 @@ export default function SettingsPanel({ onClose, existingTrades = [] }) {
         rtCostPerLot: RT_COST_PER_LOT
     });
     const [configChanged, setConfigChanged] = useState(false);
+    const [showNotification, setShowNotification] = useState(false);
 
     // Structure types for dropdown with RT leg defaults
     const structureTypes = [
@@ -42,14 +43,25 @@ export default function SettingsPanel({ onClose, existingTrades = [] }) {
     // Get unique structures from existing trades
     const uniqueStructuresFromTrades = [...new Set(existingTrades.map(t => t.structure))].sort();
 
-    // Load custom structures and settings on mount
+    // Handle escape key to close modal
+    const handleEscapeKey = useCallback((e) => {
+        if (e.key === 'Escape') {
+            onClose();
+        }
+    }, [onClose]);
+
+    // Load custom structures and settings on mount + add keyboard listener
     useEffect(() => {
         setCustomStructures(getCustomStructures());
         const savedSettings = loadSettings();
         if (savedSettings?.tradingConfig) {
             setTradingConfig(savedSettings.tradingConfig);
         }
-    }, []);
+
+        // Add escape key listener
+        document.addEventListener('keydown', handleEscapeKey);
+        return () => document.removeEventListener('keydown', handleEscapeKey);
+    }, [handleEscapeKey]);
 
     const handleAddStructure = () => {
         if (!newStructure.name.trim()) return;
@@ -77,6 +89,12 @@ export default function SettingsPanel({ onClose, existingTrades = [] }) {
     };
 
     const handleConfigChange = (field, value) => {
+        // Allow empty string for user typing
+        if (value === '' || value === '.') {
+            setTradingConfig(prev => ({ ...prev, [field]: value }));
+            setConfigChanged(true);
+            return;
+        }
         const numValue = parseFloat(value);
         if (!isNaN(numValue) && numValue >= 0) {
             setTradingConfig(prev => ({ ...prev, [field]: numValue }));
@@ -85,12 +103,25 @@ export default function SettingsPanel({ onClose, existingTrades = [] }) {
     };
 
     const handleSaveConfig = () => {
+        // Validate values before saving
+        const tickVal = parseFloat(tradingConfig.tickValue);
+        const tickSz = parseFloat(tradingConfig.tickSize);
+        const rtCost = parseFloat(tradingConfig.rtCostPerLot);
+
+        if (isNaN(tickVal) || tickVal <= 0 || isNaN(tickSz) || tickSz <= 0 || isNaN(rtCost) || rtCost < 0) {
+            return; // Invalid values, don't save
+        }
+
         // Update in-memory config
-        updateTradingConstants(tradingConfig.tickValue, tradingConfig.tickSize, tradingConfig.rtCostPerLot);
-        // Save to localStorage
-        saveSettings({ tradingConfig });
+        updateTradingConstants(tickVal, tickSz, rtCost);
+        // Merge with existing settings instead of overwriting
+        const existingSettings = loadSettings();
+        saveSettings({ ...existingSettings, tradingConfig: { tickValue: tickVal, tickSize: tickSz, rtCostPerLot: rtCost } });
         setConfigChanged(false);
-        alert('Trading constants saved! Refresh the app for full effect.');
+
+        // Show notification toast
+        setShowNotification(true);
+        setTimeout(() => setShowNotification(false), 3000);
     };
 
     const handleResetConfig = () => {
@@ -294,7 +325,7 @@ export default function SettingsPanel({ onClose, existingTrades = [] }) {
                                             <td>{type.name}</td>
                                             <td>{type.rtLegs}</td>
                                             <td>{type.rtLegs * 2}</td>
-                                            <td>${(type.rtLegs * 2 * tradingConfig.rtCostPerLot).toFixed(2)}</td>
+                                            <td>${(type.rtLegs * 2 * (parseFloat(tradingConfig.rtCostPerLot) || 0)).toFixed(2)}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -303,6 +334,14 @@ export default function SettingsPanel({ onClose, existingTrades = [] }) {
                     </section>
                 </div>
             </div>
+
+            {/* Save Notification Toast */}
+            {showNotification && (
+                <div className="save-notification">
+                    <Check size={18} />
+                    Settings saved successfully!
+                </div>
+            )}
         </div>
     );
 }

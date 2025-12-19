@@ -20,7 +20,11 @@ import {
     getTotalRTLegs,
     TICK_VALUE,
     TICK_SIZE,
-    RT_COST_PER_LOT
+    RT_COST_PER_LOT,
+    getTICK_VALUE,
+    getTICK_SIZE,
+    getRT_COST_PER_LOT,
+    getTradingConfig
 } from './structureConfig';
 
 /**
@@ -485,4 +489,7 @@ function calculateTickCapture(wins, losses, tickSize) {
 }
 
 // Export constants for use in components
+// Legacy exports (static values) - use getTradingConfig() for dynamic values
 export { TICK_VALUE, TICK_SIZE, RT_COST_PER_LOT };
+// Dynamic getter exports - always return current config values
+export { getTICK_VALUE, getTICK_SIZE, getRT_COST_PER_LOT, getTradingConfig };

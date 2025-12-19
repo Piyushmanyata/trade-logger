@@ -94,7 +94,7 @@ export function exportTradesCSV(trades) {
     const headers = ['Date', 'Time', 'Exchange', 'Structure', 'Side', 'Quantity', 'Price'];
     const rows = trades.map(t => [
         t.date.toISOString().split('T')[0],
-        t.time,
+        escapeCSV(t.time),
         escapeCSV(t.exchange),
         escapeCSV(t.structure),
         t.side,
@@ -102,7 +102,7 @@ export function exportTradesCSV(trades) {
         t.price
     ]);
 
-    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const csv = [headers.join(','), ...rows.map(r => r.map(v => escapeCSV(v)).join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
 

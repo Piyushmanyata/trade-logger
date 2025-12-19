@@ -51,7 +51,7 @@ export default function StructureDetail({ structure, onClose, onDeleteTrade }) {
 
     const formatDollars = (value) => {
         if (value === undefined || value === null || isNaN(value)) return '$0.00';
-        const prefix = value >= 0 ? (value > 0 ? '+' : '') : '';
+        const prefix = value > 0 ? '+' : '';
         return prefix + '$' + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
 

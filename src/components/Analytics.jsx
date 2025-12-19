@@ -35,7 +35,6 @@ function calculateStreaks(matches) {
     if (!matches || matches.length === 0) return { currentStreak: 0, maxWinStreak: 0, maxLossStreak: 0 };
 
     let currentStreak = 0;
-    let currentType = null;
     let maxWinStreak = 0;
     let maxLossStreak = 0;
     let winStreak = 0;

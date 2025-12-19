@@ -278,9 +278,10 @@ export function TradePnLChart({ matches }) {
 
     // Take last 20 trades for readability
     const recentMatches = matches.slice(-20);
+    const startIndex = Math.max(0, matches.length - 20);
 
     const chartData = recentMatches.map((m, idx) => ({
-        trade: `#${matches.length - 20 + idx + 1}`,
+        trade: `#${startIndex + idx + 1}`,
         pnl: m.netPnLDollars || 0,
         gross: m.pnlDollars || 0,
         type: m.type === 'CLOSE_LONG' ? 'Long' : 'Short'

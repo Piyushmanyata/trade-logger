@@ -18,13 +18,15 @@ export function calculateSharpeRatio(returns) {
 /**
  * Calculate Sortino Ratio (only penalizes downside deviation)
  * Sortino = Average Return / Downside Deviation
+ * MAR (Minimum Acceptable Return) = 0
  */
 export function calculateSortinoRatio(returns) {
     if (!returns || returns.length < 2) return 0;
     const avgReturn = returns.reduce((a, b) => a + b, 0) / returns.length;
     const negativeReturns = returns.filter(r => r < 0);
     if (negativeReturns.length === 0) return avgReturn > 0 ? Infinity : 0;
-    const downsideVariance = negativeReturns.reduce((sum, r) => sum + Math.pow(r, 2), 0) / returns.length;
+    // Downside deviation: sqrt of average of squared negative returns
+    const downsideVariance = negativeReturns.reduce((sum, r) => sum + Math.pow(r, 2), 0) / negativeReturns.length;
     const downsideDev = Math.sqrt(downsideVariance);
     if (downsideDev === 0) return avgReturn > 0 ? Infinity : 0;
     return avgReturn / downsideDev;
